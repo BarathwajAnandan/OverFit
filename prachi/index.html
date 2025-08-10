@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Let AI Give Back — Model Graph Dashboard</title>
+    <meta name="description" content="StackOverflow-style AI solutions with a 3D model graph and karma system" />
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="stylesheet" href="./assets/style.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🤝</text></svg>" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <a href="./index.html" class="brand-link">Let AI Give Back</a>
+      </div>
+      <div class="header-controls">
+        <div class="search-group">
+          <input id="globalSearch" class="input" type="search" placeholder="Search problems, solutions, models" />
+          <button id="searchButton" class="btn primary">Search</button>
+        </div>
+        <div class="filters-group">
+          <select id="filterDomain" class="select">
+            <option value="">All Domains</option>
+            <option>Code</option>
+            <option>Math</option>
+            <option>Research</option>
+            <option>Productivity</option>
+          </select>
+          <select id="filterModelSize" class="select">
+            <option value="">All Model Sizes</option>
+            <option>Small</option>
+            <option>Medium</option>
+            <option>Large</option>
+            <option>XL</option>
+          </select>
+          <select id="filterTime" class="select">
+            <option value="">Any time</option>
+            <option>Last 24h</option>
+            <option>Last 7d</option>
+            <option>Last 30d</option>
+          </select>
+        </div>
+        <div class="karma-group">
+          <div class="karma-meter">
+            <span class="karma-label">Karma</span>
+            <span id="karmaScore" class="karma-score">0</span>
+          </div>
+          <a href="./rules.html" class="btn ghost">Rules</a>
+          <button id="uploadCta" class="btn">Upload Context</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section class="graph-section">
+        <div class="graph-toolbar">
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot problem"></span>Problem</span>
+            <span class="legend-item"><span class="legend-dot solution"></span>Solution</span>
+            <span class="legend-item"><span class="legend-dot model"></span>Model</span>
+          </div>
+          <div class="graph-actions">
+            <button id="resetCamera" class="btn small">Reset Camera</button>
+            <button id="toggleLabels" class="btn small">Toggle Labels</button>
+            <button id="pinSelected" class="btn small">Pin Selected</button>
+          </div>
+        </div>
+        <div id="graph" class="graph-canvas" aria-label="3D Model Graph" role="application"></div>
+      </section>
+
+      <aside id="detailsPanel" class="details-panel hidden" aria-live="polite">
+        <div class="details-header">
+          <h2 id="detailsTitle">Details</h2>
+          <button id="closeDetails" class="icon-btn" aria-label="Close details">✕</button>
+        </div>
+        <div id="detailsContent" class="details-content"></div>
+      </aside>
+
+      <section class="list-section">
+        <div class="tabs">
+          <button class="tab active" data-tab="problems">Problems</button>
+          <button class="tab" data-tab="solutions">Solutions</button>
+          <button class="tab" data-tab="models">Models</button>
+        </div>
+        <div class="list-toolbar">
+          <div class="sort-group">
+            <label for="sortSelect">Sort by</label>
+            <select id="sortSelect" class="select">
+              <option value="relevance">Relevance</option>
+              <option value="reuse">Reuse Score</option>
+              <option value="karma">Karma</option>
+              <option value="freshness">Freshness</option>
+              <option value="cost">Cost</option>
+            </select>
+          </div>
+        </div>
+        <div id="listContainer" class="cards"></div>
+      </section>
+    </main>
+
+    <div class="retrieve-bar">
+      <input id="retrieveInput" class="input xl" type="search" placeholder="Describe your problem to match existing solutions..." />
+      <button id="retrieveButton" class="btn primary xl">Find Solutions</button>
+      <span class="retrieve-hint">or call the API from a smaller model to get matches back</span>
+    </div>
+
+    <div id="a11yToasts" aria-live="polite" aria-atomic="true" style="position:fixed; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;"></div>
+
+    <footer class="app-footer">
+      <span>© Let AI Give Back</span>
+      <a href="./rules.html">Community Rules & Karma</a>
+      <a href="https://vasturiano.github.io/3d-force-graph/example/curved-links/" target="_blank" rel="noopener noreferrer">Graph inspiration</a>
+    </footer>
+
+    <script src="https://unpkg.com/3d-force-graph"></script>
+    <script src="./assets/app.js"></script>
+  </body>
+</html> 

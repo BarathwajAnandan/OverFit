@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Community Rules — Let AI Give Back</title>
+    <link rel="stylesheet" href="./assets/style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <a href="./index.html" class="brand-link">Let AI Give Back</a>
+      </div>
+      <div class="header-controls">
+        <div></div>
+        <div></div>
+        <div class="karma-group">
+          <div class="karma-meter">
+            <span class="karma-label">Karma</span>
+            <span id="karmaScore" class="karma-score">—</span>
+          </div>
+          <a href="./rules.html" class="btn ghost">Rules</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main" style="max-width: 980px; margin: 0 auto;">
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">Community Rules & Karma</div>
+        </div>
+        <div class="content" style="display: grid; gap: 14px; color: var(--muted);">
+          <div>
+            <strong>Karma</strong>: +1 per upload. Upvotes on your uploads increase your karma. Flagged, faulty, or plagiarized uploads reduce karma and may lead to bans.
+          </div>
+          <div>
+            <strong>Plagiarism</strong>: Automated checks are in place. If plagiarism is detected, the content is removed and the account may be suspended.
+          </div>
+          <div>
+            <strong>Votes & Flags</strong>: Anyone can upvote/downvote. Flags send content to trusted reviewers for rapid review.
+          </div>
+          <div>
+            <strong>Trusted Reviewers</strong>: Elevated users who can resolve flags, restore content, and apply penalties when necessary.
+          </div>
+          <div>
+            <strong>Conduct</strong>: Share with consent, redact sensitive information, and respect licensing of third-party content.
+          </div>
+          <div>
+            <strong>Appeals</strong>: If you believe a moderation action was in error, submit an appeal for re-evaluation.
+          </div>
+        </div>
+        <div class="actions" style="margin-top: 8px;">
+          <a class="btn" href="./index.html">Back to Dashboard</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span>© Let AI Give Back</span>
+      <a href="./index.html">Dashboard</a>
+      <a href="https://vasturiano.github.io/3d-force-graph/example/curved-links/" target="_blank" rel="noopener noreferrer">Graph inspiration</a>
+    </footer>
+
+    <script>
+      // Simple hydration for header karma display reuse
+      const karmaFromIndex = window.localStorage.getItem('karmaScore')
+      if (karmaFromIndex)
+      {
+        document.getElementById('karmaScore').textContent = karmaFromIndex
+      }
+    </script>
+  </body>
+</html> 
