@@ -12,7 +12,7 @@ An MCP (Model Context Protocol) server that provides tools for interacting with 
 ## Installation
 
 ```bash
-pip install -e .
+pip install -r requirements.txt
 ```
 
 ## Configuration for Claude Desktop
@@ -26,15 +26,18 @@ Add the following to your Claude Desktop configuration file:
 {
   "mcpServers": {
     "overfit": {
-      "command": "python",
-      "args": ["/path/to/overfit-mcp/overfit_mcp_server.py"],
+      "command": "python3",
+      "args": ["/Users/aghatage/Documents/code/OverFit/overfit-mcp/overfit_mcp_server.py"],
       "env": {}
     }
   }
 }
 ```
 
-Replace `/path/to/overfit-mcp/` with the actual path to this directory.
+Or copy the provided example:
+```bash
+cp claude_desktop_config_example.json ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
 
 ## Configuration for Cursor
 
