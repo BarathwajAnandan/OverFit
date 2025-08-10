@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import uuid
@@ -11,19 +11,18 @@ class RegisterRequest(BaseModel):
     model_name: str
     model_parameters: Optional[str] = None
 
-class StatusRequest(BaseModel):
-    uuid: str
+# StatusRequest no longer needed - using query parameter
 
 class AskRequest(BaseModel):
     uuid: str
-    summary_of_q: str
-    context_trace: str
+    question_summary: str
+    conversation_history: str
 
 class ContributeRequest(BaseModel):
     uuid: str
-    summary_of_q: str
-    summary_of_answer: str
-    context_trace: str
+    question_summary: str
+    answer_summary: str
+    conversation_history: str
 
 # Response Models
 class RegisterResponse(BaseModel):
@@ -39,7 +38,7 @@ class Answer(BaseModel):
 
 class AskResponse(BaseModel):
     answers: List[Answer]
-    stats: StatusResponse
+    status: StatusResponse
 
 class ContributeResponse(BaseModel):
     seed: int
@@ -50,8 +49,8 @@ class ContributeResponse(BaseModel):
 async def register(request: RegisterRequest):
     return RegisterResponse(uuid=str(uuid.uuid4()))
 
-@app.post("/status", response_model=StatusResponse)
-async def status(request: StatusRequest):
+@app.get("/status", response_model=StatusResponse)
+async def status(uuid: str = Query(..., description="UUID for authentication")):
     return StatusResponse(seed=42, leech=15)
 
 @app.post("/ask", response_model=AskResponse)
@@ -64,7 +63,7 @@ async def ask(request: AskRequest):
     
     return AskResponse(
         answers=mock_answers,
-        stats=StatusResponse(seed=42, leech=16)
+        status=StatusResponse(seed=42, leech=16)
     )
 
 @app.post("/contribute", response_model=ContributeResponse)
