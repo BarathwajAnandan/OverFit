@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "overfit": {
+      "command": "python",
+      "args": ["/Users/aghatage/Documents/code/OverFit/overfit-mcp/overfit_mcp_server.py"],
+      "env": {}
+    }
+  }
+}

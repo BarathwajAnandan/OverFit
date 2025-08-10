@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "overfit-mcp-server"
+version = "0.1.0"
+description = "MCP server for OverFit repository interaction"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "fastapi>=0.100.0",
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+overfit-mcp = "overfit_mcp_server:main"
