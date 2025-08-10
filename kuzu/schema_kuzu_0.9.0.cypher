@@ -1,9 +1,3 @@
--- Kuzu graph schema for Overfit
--- Compatible with KuzuDB v0.9.0
--- https://kuzudb.com/
-
--- ---------- Node Tables ----------
--- Problem node table
 CREATE NODE TABLE Problem(
   id STRING PRIMARY KEY,
   text STRING,
@@ -12,7 +6,6 @@ CREATE NODE TABLE Problem(
   metadata STRING
 );
 
--- Method node table
 CREATE NODE TABLE Method(
   id STRING PRIMARY KEY,
   name STRING,
@@ -20,7 +13,6 @@ CREATE NODE TABLE Method(
   metadata STRING
 );
 
--- Solution node table  
 CREATE NODE TABLE Solution(
   id STRING PRIMARY KEY,
   problem_id STRING,
@@ -29,7 +21,6 @@ CREATE NODE TABLE Solution(
   metadata STRING
 );
 
--- Concept node table
 CREATE NODE TABLE Concept(
   id STRING PRIMARY KEY,
   name STRING,
@@ -37,29 +28,51 @@ CREATE NODE TABLE Concept(
   metadata STRING
 );
 
--- ---------- Relationship Tables ----------
--- Link a Solution to the Problem it solves
 CREATE REL TABLE SOLVES(
   FROM Solution TO Problem,
   created_at TIMESTAMP
 );
 
--- Methods that can be applied to solve a Problem
 CREATE REL TABLE APPLIES_TO(
   FROM Method TO Problem
 );
 
--- Problems are about Concepts
 CREATE REL TABLE ABOUT(
   FROM Problem TO Concept
 );
 
--- Methods use Concepts
 CREATE REL TABLE USES(
   FROM Method TO Concept
 );
 
--- Solutions reference Concepts (e.g., in the expression/derivation)
 CREATE REL TABLE REFERENCES(
   FROM Solution TO Concept
 );
+
+CREATE REL TABLE RELATED_TO(FROM Problem TO Problem, similarity FLOAT);
+CREATE REL TABLE DEPENDS_ON(FROM Concept TO Concept);
+CREATE REL TABLE SIMILAR_TO(FROM Solution TO Solution, similarity FLOAT);
+CREATE REL TABLE CAUSED_BY(FROM Problem TO Problem);
+CREATE REL TABLE WORKAROUND_FOR(FROM Method TO Problem);
+
+CREATE NODE TABLE Model(
+  id STRING PRIMARY KEY,
+  name STRING,
+  metadata STRING
+);
+
+CREATE (:Model {id: 'gpt2', name: 'GPT-2', metadata: '{}'});
+CREATE (:Model {id: 'gpt2_124m', name: 'GPT-2 124M', metadata: '{}'});
+CREATE (:Model {id: 'qwen_14b', name: 'Qwen-14B-Chat', metadata: '{}'});
+CREATE (:Model {id: 'deepseek_r1', name: 'DeepSeek R1', metadata: '{}'});
+CREATE (:Model {id: 'llama2', name: 'Llama 2', metadata: '{}'});
+CREATE (:Model {id: 'claude_opus', name: 'Claude Opus', metadata: '{}'});
+CREATE (:Model {id: 'gpt4', name: 'GPT-4', metadata: '{}'});
+
+CREATE REL TABLE CAN_SOLVE(FROM Model TO Problem, confidence FLOAT);
+CREATE REL TABLE CANT_SOLVE(FROM Model TO Problem, reason STRING);
+CREATE REL TABLE RELATED_TO(FROM Problem TO Problem, similarity FLOAT);
+CREATE REL TABLE DEPENDS_ON(FROM Concept TO Concept);
+CREATE REL TABLE SIMILAR_TO(FROM Solution TO Solution, similarity FLOAT);
+CREATE REL TABLE CAUSED_BY(FROM Problem TO Problem);
+CREATE REL TABLE WORKAROUND_FOR(FROM Method TO Problem);
