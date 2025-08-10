@@ -3,21 +3,47 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Community Rules — Let AI Give Back</title>
+    <title>Community Rules — Overfit</title>
     <link rel="stylesheet" href="./assets/style.css" />
   </head>
   <body>
     <header class="app-header">
       <div class="brand">
-        <a href="./index.html" class="brand-link">Let AI Give Back</a>
+        <div class="brand-row">
+          <span class="brand-logo" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="g1" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#7aa2ff" />
+                  <stop offset="1" stop-color="#22d3ee" />
+                </linearGradient>
+              </defs>
+              <circle cx="5" cy="12" r="3" stroke="url(#g1)" stroke-width="2"/>
+              <circle cx="19" cy="7" r="3" stroke="url(#g1)" stroke-width="2"/>
+              <circle cx="19" cy="17" r="3" stroke="url(#g1)" stroke-width="2"/>
+              <path d="M8 12 L16 8" stroke="url(#g1)" stroke-width="2"/>
+              <path d="M8 12 L16 16" stroke="url(#g1)" stroke-width="2"/>
+            </svg>
+          </span>
+          <a href="./index.html" class="brand-link">Overfit</a>
+        </div>
+        <div class="tagline">Let AI give back</div>
       </div>
       <div class="header-controls">
         <div></div>
         <div></div>
         <div class="karma-group">
-          <div class="karma-meter">
-            <span class="karma-label">Karma</span>
-            <span id="karmaScore" class="karma-score">—</span>
+          <div class="score-meter seed">
+            <span class="score-label">Seed</span>
+            <span id="seedScore" class="score-score">—</span>
+          </div>
+          <div class="score-meter leech">
+            <span class="score-label">Leech</span>
+            <span id="leechScore" class="score-score">—</span>
+          </div>
+          <div class="score-meter life">
+            <span class="score-label">Life</span>
+            <span id="lifeScore" class="score-score">—</span>
           </div>
           <a href="./rules.html" class="btn ghost">Rules</a>
         </div>
@@ -27,20 +53,20 @@
     <main class="app-main" style="max-width: 980px; margin: 0 auto;">
       <section class="card">
         <div class="card-header">
-          <div class="card-title">Community Rules & Karma</div>
+          <div class="card-title">Community Rules & Points</div>
         </div>
         <div class="content" style="display: grid; gap: 14px; color: var(--muted);">
           <div>
-            <strong>Karma</strong>: +1 per upload. Upvotes on your uploads increase your karma. Flagged, faulty, or plagiarized uploads reduce karma and may lead to bans.
+            <strong>Seed</strong>: Earned by contributing — uploading context, answering unsolved questions, improving solutions. Each accepted contribution typically gives +1 Seed.
           </div>
           <div>
-            <strong>Plagiarism</strong>: Automated checks are in place. If plagiarism is detected, the content is removed and the account may be suspended.
+            <strong>Leech</strong>: Spent when requesting premium help. Each premium request consumes 1 Leech.
           </div>
           <div>
-            <strong>Votes & Flags</strong>: Anyone can upvote/downvote. Flags send content to trusted reviewers for rapid review.
+            <strong>Life</strong>: Your available credit: <em>Life = Seed − Leech</em>. You need Life ≥ 1 to request premium help.
           </div>
           <div>
-            <strong>Trusted Reviewers</strong>: Elevated users who can resolve flags, restore content, and apply penalties when necessary.
+            <strong>Voting</strong>: Upvotes surface quality. Repeated low-quality or plagiarized content may lead to penalties.
           </div>
           <div>
             <strong>Conduct</strong>: Share with consent, redact sensitive information, and respect licensing of third-party content.
@@ -56,18 +82,34 @@
     </main>
 
     <footer class="app-footer">
-      <span>© Let AI Give Back</span>
+      <span>© Overfit</span>
       <a href="./index.html">Dashboard</a>
       <a href="https://vasturiano.github.io/3d-force-graph/example/curved-links/" target="_blank" rel="noopener noreferrer">Graph inspiration</a>
     </footer>
 
     <script>
-      // Simple hydration for header karma display reuse
-      const karmaFromIndex = window.localStorage.getItem('karmaScore')
-      if (karmaFromIndex)
+      function updateRulesHeader()
       {
-        document.getElementById('karmaScore').textContent = karmaFromIndex
+        const seed = Number(window.localStorage.getItem('seedScore') || 0)
+        const leech = Number(window.localStorage.getItem('leechScore') || 0)
+        const life = seed - leech
+        var seedEl = document.getElementById('seedScore')
+        var leechEl = document.getElementById('leechScore')
+        var lifeEl = document.getElementById('lifeScore')
+        if (seedEl) { seedEl.textContent = String(seed) }
+        if (leechEl) { leechEl.textContent = String(leech) }
+        if (lifeEl)
+        {
+          lifeEl.textContent = String(life)
+          var lifeWrap = lifeEl.parentElement
+          if (lifeWrap)
+          {
+            lifeWrap.classList.remove('positive', 'negative')
+            lifeWrap.classList.add(life >= 0 ? 'positive' : 'negative')
+          }
+        }
       }
+      updateRulesHeader()
     </script>
   </body>
 </html> 

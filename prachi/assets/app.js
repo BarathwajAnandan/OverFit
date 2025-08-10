@@ -6,13 +6,18 @@
 
 const placeholderGraph = {
   nodes: [
-    { id: 'p1', type: 'problem', label: 'Minify JS without breaking React keys', domain: 'Code', tags: ['react', 'build'], karma: 12 },
-    { id: 'p2', type: 'problem', label: 'Extract entities from legal contracts', domain: 'Research', tags: ['nlp', 'contracts'], karma: 9 },
+    { id: 'p1', type: 'problem', label: 'Minify JS without breaking React keys', domain: 'Code', tags: ['react', 'build'], karma: 12, views: 134 },
+    { id: 'p2', type: 'problem', label: 'Extract entities from legal contracts', domain: 'Research', tags: ['nlp', 'contracts'], karma: 9, views: 211 },
+    { id: 'p3', type: 'problem', label: 'Speed up vector search with PQ/IVF', domain: 'Research', tags: ['vector-db', 'faiss'], karma: 3, views: 89 },
+    { id: 'p4', type: 'problem', label: 'Prevent prompt injection in tools', domain: 'Code', tags: ['security', 'agents'], karma: 5, views: 177 },
     { id: 's1', type: 'solution', label: 'AST-aware minifier config', reuseScore: 0.86, cost: '$', upvotes: 17 },
     { id: 's2', type: 'solution', label: 'Few-shot contract NER', reuseScore: 0.78, cost: '$$', upvotes: 33 },
     { id: 'm1', type: 'model', label: 'Llama 3 70B', size: 'Large', provider: 'Meta' },
     { id: 'm2', type: 'model', label: 'GPT-4o', size: 'XL', provider: 'OpenAI' },
     { id: 'm3', type: 'model', label: 'Phi-3 Mini', size: 'Small', provider: 'Microsoft' },
+    { id: 'm4', type: 'model', label: 'Claude Sonnet', size: 'Large', provider: 'Anthropic' },
+    { id: 'm5', type: 'model', label: 'Qwen', size: 'Large', provider: 'Alibaba' },
+    { id: 'm6', type: 'model', label: 'GPT-5', size: 'XL', provider: 'OpenAI' }
   ],
   links: [
     { source: 'p1', target: 's1', type: 'solves', strength: 1.0 },
@@ -29,7 +34,43 @@ const state = {
   pinnedNodes: new Set(),
   activeTab: 'problems',
   sortBy: 'relevance',
-  karma: Number(window.localStorage.getItem('karmaScore') || 42)
+  karma: Number(window.localStorage.getItem('karmaScore') || 42),
+  seed: Number(window.localStorage.getItem('seedScore') || 2),
+  leech: Number(window.localStorage.getItem('leechScore') || 0)
+}
+
+function getLife()
+{
+  return state.seed - state.leech
+}
+
+function updateScoresUI()
+{
+  const seedEl = document.getElementById('seedScore')
+  const leechEl = document.getElementById('leechScore')
+  const lifeEl = document.getElementById('lifeScore')
+  if (seedEl)
+  {
+    seedEl.textContent = String(state.seed)
+  }
+  if (leechEl)
+  {
+    leechEl.textContent = String(state.leech)
+  }
+  if (lifeEl)
+  {
+    const life = getLife()
+    lifeEl.textContent = String(life)
+    const lifeWrap = lifeEl.parentElement
+    if (lifeWrap)
+    {
+      lifeWrap.classList.remove('positive', 'negative')
+      lifeWrap.classList.add(life >= 0 ? 'positive' : 'negative')
+    }
+  }
+  window.localStorage.setItem('seedScore', String(state.seed))
+  window.localStorage.setItem('leechScore', String(state.leech))
+  window.localStorage.setItem('karmaScore', String(state.karma))
 }
 
 function nodeColor(node)
@@ -75,7 +116,7 @@ function initGraph()
     .nodeLabel(node => state.showLabels ? node.label : '')
     .linkColor(link => linkColor(link))
     .linkOpacity(0.35)
-    .linkCurvature(link => 0.35 + Math.random() * 0.3) // variable curvature like example
+    .linkCurvature(link => 0.35 + Math.random() * 0.3)
     .linkDirectionalParticles(2)
     .linkDirectionalParticleWidth(link => Math.max(1, (link.strength || 0.2) * 4))
     .linkDirectionalParticleSpeed(0.005)
@@ -83,10 +124,8 @@ function initGraph()
     .onNodeClick(node => onNodeClick(node, Graph))
     .onBackgroundClick(() => closeDetails())
 
-  // initial camera position for a cinematic reveal
   Graph.cameraPosition({ x: 0, y: 0, z: 180 }, { x: 0, y: 0, z: 0 }, 1500)
 
-  // expose for debug
   window.__Graph = Graph
 }
 
@@ -142,70 +181,97 @@ function formatValue(value)
 
 function initHeader()
 {
-  document.getElementById('karmaScore').textContent = state.karma
-  document.getElementById('toggleLabels').addEventListener('click', () =>
-  {
-    state.showLabels = !state.showLabels
-    if (window.__Graph)
-    {
-      window.__Graph.nodeLabel(node => state.showLabels ? node.label : '')
-    }
-  })
-  document.getElementById('resetCamera').addEventListener('click', () =>
-  {
-    if (window.__Graph)
-    {
-      window.__Graph.cameraPosition({ x: 0, y: 0, z: 180 }, { x: 0, y: 0, z: 0 }, 1200)
-    }
-  })
-  document.getElementById('pinSelected').addEventListener('click', () =>
-  {
-    // Visual placeholder: toggles pin on the last clicked node by freezing position
-    const panel = document.getElementById('detailsPanel')
-    if (panel.classList.contains('hidden'))
-    {
-      return
-    }
-    const nodeLabel = document.getElementById('detailsTitle').textContent
-    const node = placeholderGraph.nodes.find(n => n.label === nodeLabel)
-    if (!node)
-    {
-      return
-    }
-    if (state.pinnedNodes.has(node.id))
-    {
-      node.fx = undefined; node.fy = undefined; node.fz = undefined
-      state.pinnedNodes.delete(node.id)
-    }
-    else
-    {
-      node.fx = node.x; node.fy = node.y; node.fz = node.z
-      state.pinnedNodes.add(node.id)
-    }
-  })
+  updateScoresUI()
 
-  document.getElementById('searchButton').addEventListener('click', () =>
+  const labelsBtn = document.getElementById('toggleLabels')
+  if (labelsBtn)
   {
-    const q = document.getElementById('globalSearch').value.trim().toLowerCase()
-    renderList(q)
-  })
-  document.getElementById('globalSearch').addEventListener('keydown', e =>
-  {
-    if (e.key === 'Enter')
+    labelsBtn.addEventListener('click', () =>
     {
-      e.preventDefault()
-      const q = e.currentTarget.value.trim().toLowerCase()
-      renderList(q)
-    }
-  })
-  document.getElementById('uploadCta').addEventListener('click', () =>
+      state.showLabels = !state.showLabels
+      if (window.__Graph)
+      {
+        window.__Graph.nodeLabel(node => state.showLabels ? node.label : '')
+      }
+    })
+  }
+
+  const resetBtn = document.getElementById('resetCamera')
+  if (resetBtn)
   {
-    // Placeholder: simulate successful upload (+1 karma)
-    state.karma += 1
-    document.getElementById('karmaScore').textContent = state.karma
-    window.localStorage.setItem('karmaScore', String(state.karma))
-    toast('Upload received. Karma +1')
-  })
+    resetBtn.addEventListener('click', () =>
+    {
+      if (window.__Graph)
+      {
+        window.__Graph.cameraPosition({ x: 0, y: 0, z: 180 }, { x: 0, y: 0, z: 0 }, 1200)
+      }
+    })
+  }
+
+  const pinBtn = document.getElementById('pinSelected')
+  if (pinBtn)
+  {
+    pinBtn.addEventListener('click', () =>
+    {
+      const panel = document.getElementById('detailsPanel')
+      if (panel.classList.contains('hidden'))
+      {
+        return
+      }
+      const nodeLabel = document.getElementById('detailsTitle').textContent
+      const node = placeholderGraph.nodes.find(n => n.label === nodeLabel)
+      if (!node)
+      {
+        return
+      }
+      if (state.pinnedNodes.has(node.id))
+      {
+        node.fx = undefined; node.fy = undefined; node.fz = undefined
+        state.pinnedNodes.delete(node.id)
+      }
+      else
+      {
+        node.fx = node.x; node.fy = node.y; node.fz = node.z
+        state.pinnedNodes.add(node.id)
+      }
+    })
+  }
+
+  const globalSearch = document.getElementById('globalSearch')
+  if (globalSearch)
+  {
+    globalSearch.addEventListener('keydown', e =>
+    {
+      if (e.key === 'Enter')
+      {
+        e.preventDefault()
+        const q = e.currentTarget.value.trim().toLowerCase()
+        renderList(q)
+      }
+    })
+  }
+
+  const contribBtn = document.getElementById('contributeCta')
+  if (contribBtn)
+  {
+    contribBtn.addEventListener('click', () =>
+    {
+      state.activeTab = 'unanswered'
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'unanswered'))
+      renderList()
+    })
+  }
+
+  const filterDomain = document.getElementById('filterDomain')
+  if (filterDomain)
+  {
+    filterDomain.addEventListener('change', () => renderList())
+  }
+  const filterModels = document.getElementById('filterModels')
+  if (filterModels)
+  {
+    filterModels.addEventListener('change', () => renderList())
+  }
 }
 
 function toast(message)
@@ -261,11 +327,15 @@ function initTabs()
 
 function initList()
 {
-  document.getElementById('sortSelect').addEventListener('change', e =>
+  const sortSelect = document.getElementById('sortSelect')
+  if (sortSelect)
   {
-    state.sortBy = e.target.value
-    renderList()
-  })
+    sortSelect.addEventListener('change', e =>
+    {
+      state.sortBy = e.target.value
+      renderList()
+    })
+  }
   renderList()
 }
 
@@ -274,6 +344,10 @@ function getItemsForTab()
   if (state.activeTab === 'problems')
   {
     return placeholderGraph.nodes.filter(n => n.type === 'problem')
+  }
+  if (state.activeTab === 'unanswered')
+  {
+    return placeholderGraph.nodes.filter(n => n.type === 'problem' && countAnswers(n.id) === 0)
   }
   if (state.activeTab === 'solutions')
   {
@@ -316,90 +390,240 @@ function costRank(cost)
   return 999
 }
 
+function countAnswers(problemId)
+{
+  const links = placeholderGraph.links.filter(l => l.type === 'solves' && (l.source === problemId || l.target === problemId))
+  let count = 0
+  links.forEach(l =>
+  {
+    const otherId = l.source === problemId ? l.target : l.source
+    const other = placeholderGraph.nodes.find(n => n.id === otherId)
+    if (other && other.type === 'solution')
+    {
+      count += 1
+    }
+  })
+  return count
+}
+
+function itemMatchesFilters(item)
+{
+  const domain = document.getElementById('filterDomain')?.value || ''
+  const model = document.getElementById('filterModels')?.value || ''
+
+  if (domain && (item.domain || '') !== domain)
+  {
+    // For solutions, domain may be inferred from linked problem; leave simple for now
+    if (item.type !== 'solution')
+    {
+      return false
+    }
+  }
+
+  if (!model)
+  {
+    return true
+  }
+
+  if (item.type === 'model')
+  {
+    return (item.label || '').toLowerCase() === model.toLowerCase()
+  }
+
+  if (item.type === 'solution')
+  {
+    const produced = placeholderGraph.links.find(l => l.type === 'produced_by' && (l.source === item.id || l.target === item.id))
+    if (!produced)
+    {
+      return false
+    }
+    const modelId = produced.source === item.id ? produced.target : produced.source
+    const modelNode = placeholderGraph.nodes.find(n => n.id === modelId)
+    return modelNode && (modelNode.label || '').toLowerCase() === model.toLowerCase()
+  }
+
+  if (item.type === 'problem')
+  {
+    // problem matches if any linked solution is produced by selected model
+    const solves = placeholderGraph.links.filter(l => l.type === 'solves' && (l.source === item.id || l.target === item.id))
+    return solves.some(s =>
+    {
+      const solId = s.source === item.id ? s.target : s.source
+      const produced = placeholderGraph.links.find(l => l.type === 'produced_by' && (l.source === solId || l.target === solId))
+      if (!produced)
+      {
+        return false
+      }
+      const modelId = produced.source === solId ? produced.target : produced.source
+      const modelNode = placeholderGraph.nodes.find(n => n.id === modelId)
+      return modelNode && (modelNode.label || '').toLowerCase() === model.toLowerCase()
+    })
+  }
+  return true
+}
+
 function renderList(query = '')
 {
   const container = document.getElementById('listContainer')
   container.innerHTML = ''
+
   const items = sortItems(getItemsForTab())
   const filtered = items.filter(item =>
   {
-    if (!query)
+    if (query)
     {
-      return true
+      const hay = `${item.label || ''} ${(item.tags || []).join(' ')} ${(item.domain || '')}`.toLowerCase()
+      if (!hay.includes(query))
+      {
+        return false
+      }
     }
-    const hay = `${item.label || ''} ${(item.tags || []).join(' ')} ${(item.domain || '')}`.toLowerCase()
-    return hay.includes(query)
+    return itemMatchesFilters(item)
   })
 
-  const fragments = document.createDocumentFragment()
+  const table = document.createElement('table')
+  table.className = 'table'
+
+  const thead = document.createElement('thead')
+  const thr = document.createElement('tr')
+
+  if (state.activeTab === 'problems' || state.activeTab === 'unanswered')
+  {
+    thr.innerHTML = `<th style="width:90px;">Votes</th><th style="width:100px;">Answers</th><th style="width:90px;">Views</th><th>Title</th><th style="width:240px;">Tags</th><th style="width:220px;">Actions</th>`
+  }
+  else if (state.activeTab === 'solutions')
+  {
+    thr.innerHTML = `<th style="width:100px;">Upvotes</th><th style="width:100px;">Reuse</th><th style="width:100px;">Cost</th><th>Title</th><th style="width:180px;">Model</th><th style="width:180px;">Actions</th>`
+  }
+  else
+  {
+    thr.innerHTML = `<th>Model</th><th style="width:180px;">Provider</th><th style="width:120px;">Size</th><th style="width:160px;">Actions</th>`
+  }
+
+  thead.appendChild(thr)
+  table.appendChild(thead)
+
+  const tbody = document.createElement('tbody')
+
   filtered.forEach(item =>
   {
-    const card = document.createElement('div')
-    card.className = 'card'
+    const tr = document.createElement('tr')
 
-    const header = document.createElement('div')
-    header.className = 'card-header'
-    header.innerHTML = `<div class="card-title">${item.label}</div>` +
-      `<div class="card-meta">` +
-      (item.type ? `<span class="badge">${item.type}</span>` : '') +
-      (item.domain ? `<span class="badge">${item.domain}</span>` : '') +
-      `</div>`
-
-    const metrics = document.createElement('div')
-    metrics.className = 'metrics'
-    metrics.innerHTML = `
-      ${item.reuseScore != null ? `<span>Reuse: ${(item.reuseScore * 100).toFixed(0)}%</span>` : ''}
-      ${item.karma != null ? `<span>Karma: ${item.karma}</span>` : ''}
-      ${item.upvotes != null ? `<span>Upvotes: ${item.upvotes}</span>` : ''}
-      ${item.cost ? `<span>Cost: ${item.cost}</span>` : ''}
-      ${item.size ? `<span>Size: ${item.size}</span>` : ''}
-    `
-
-    const actions = document.createElement('div')
-    actions.className = 'actions'
-    const openBtn = document.createElement('button')
-    openBtn.className = 'btn small'
-    openBtn.textContent = 'Open details'
-    openBtn.addEventListener('click', () => openDetails(item))
-
-    const upvoteBtn = document.createElement('button')
-    upvoteBtn.className = 'btn small'
-    upvoteBtn.textContent = 'Upvote'
-    upvoteBtn.addEventListener('click', () =>
+    if (state.activeTab === 'problems' || state.activeTab === 'unanswered')
     {
-      state.karma += 1
-      document.getElementById('karmaScore').textContent = state.karma
-      window.localStorage.setItem('karmaScore', String(state.karma))
-      toast('Upvoted. Karma +1')
-    })
+      const votes = item.karma || 0
+      const answers = countAnswers(item.id)
+      const views = item.views || Math.floor(50 + Math.random() * 400)
 
-    actions.appendChild(openBtn)
-    actions.appendChild(upvoteBtn)
+      tr.innerHTML = `
+        <td>${votes}</td>
+        <td>${answers}</td>
+        <td>${views}</td>
+        <td>${item.label}</td>
+        <td>${(item.tags || []).map(t => `<span class=\"badge\">${t}</span>`).join(' ')}</td>
+        <td class="td-actions"></td>
+      `
 
-    card.appendChild(header)
-    card.appendChild(metrics)
-    card.appendChild(actions)
+      const actions = tr.querySelector('.td-actions')
+      const openBtn = document.createElement('button')
+      openBtn.className = 'btn small'
+      openBtn.textContent = 'Open'
+      openBtn.addEventListener('click', () => openDetails(item))
 
-    fragments.appendChild(card)
+      const answerBtn = document.createElement('button')
+      answerBtn.className = 'btn small'
+      answerBtn.textContent = answers === 0 ? 'Answer' : 'Add answer'
+      answerBtn.addEventListener('click', () => onAnswerProblem(item))
+
+      actions.appendChild(openBtn)
+      actions.appendChild(answerBtn)
+    }
+    else if (state.activeTab === 'solutions')
+    {
+      const upvotes = item.upvotes || 0
+      const reuse = item.reuseScore != null ? `${(item.reuseScore * 100).toFixed(0)}%` : '—'
+      const produced = placeholderGraph.links.find(l => l.type === 'produced_by' && (l.source === item.id || l.target === item.id))
+      const modelId = produced ? (produced.source === item.id ? produced.target : produced.source) : null
+      const modelNode = modelId ? placeholderGraph.nodes.find(n => n.id === modelId) : null
+
+      tr.innerHTML = `
+        <td>${upvotes}</td>
+        <td>${reuse}</td>
+        <td>${item.cost || '—'}</td>
+        <td>${item.label}</td>
+        <td>${modelNode ? modelNode.label : '—'}</td>
+        <td class="td-actions"></td>
+      `
+
+      const actions = tr.querySelector('.td-actions')
+      const openBtn = document.createElement('button')
+      openBtn.className = 'btn small'
+      openBtn.textContent = 'Open'
+      openBtn.addEventListener('click', () => openDetails(item))
+      actions.appendChild(openBtn)
+    }
+    else
+    {
+      tr.innerHTML = `
+        <td>${item.label}</td>
+        <td>${item.provider || '—'}</td>
+        <td>${item.size || '—'}</td>
+        <td class="td-actions"></td>
+      `
+      const actions = tr.querySelector('.td-actions')
+      const openBtn = document.createElement('button')
+      openBtn.className = 'btn small'
+      openBtn.textContent = 'Open'
+      openBtn.addEventListener('click', () => openDetails(item))
+      actions.appendChild(openBtn)
+    }
+
+    tbody.appendChild(tr)
   })
 
-  container.appendChild(fragments)
+  table.appendChild(tbody)
+  container.appendChild(table)
+}
+
+function onAnswerProblem(problem)
+{
+  const title = window.prompt('Provide a short title for your answer:')
+  if (!title)
+  {
+    return
+  }
+  const id = `s${Date.now()}`
+  placeholderGraph.nodes.push({ id, type: 'solution', label: title, reuseScore: 0.0, upvotes: 0 })
+  placeholderGraph.links.push({ source: problem.id, target: id, type: 'solves', strength: 1.0 })
+
+  state.seed += 1
+  updateScoresUI()
+  toast('Answer submitted. +1 Seed')
+
+  if (window.__Graph)
+  {
+    window.__Graph.graphData(placeholderGraph)
+  }
+  renderList()
 }
 
 function initRetrieveBar()
 {
-  document.getElementById('retrieveButton').addEventListener('click', () =>
+  const retrieveBtn = document.getElementById('retrieveButton')
+  if (retrieveBtn)
   {
-    const q = document.getElementById('retrieveInput').value.trim()
-    if (!q)
+    retrieveBtn.addEventListener('click', () =>
     {
-      return
-    }
-    // For now, just filter list and focus Problems tab
-    state.activeTab = 'problems'
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'problems'))
-    renderList(q.toLowerCase())
-  })
+      const q = document.getElementById('retrieveInput').value.trim()
+      if (!q)
+      {
+        return
+      }
+      state.activeTab = 'problems'
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'problems'))
+      renderList(q.toLowerCase())
+    })
+  }
 }
 
 function initDetailsPanel()
