@@ -93,13 +93,16 @@
         <div id="graph" class="graph-canvas" aria-label="3D Model Graph" role="application"></div>
       </section>
 
-      <aside id="detailsPanel" class="details-panel hidden" aria-live="polite">
+      <!-- Details Panel -->
+      <div id="detailsPanel" class="details-panel hidden">
         <div class="details-header">
-          <h2 id="detailsTitle">Details</h2>
-          <button id="closeDetails" class="icon-btn" aria-label="Close details">✕</button>
+          <h3 id="detailsTitle" class="details-title">Node Details</h3>
+          <span id="detailsType" class="details-type"></span>
+          <button id="closeDetails" class="close-details" aria-label="Close details">×</button>
         </div>
-        <div id="detailsContent" class="details-content"></div>
-      </aside>
+        <div id="detailsContent" class="details-content">
+        </div>
+      </div>
 
       <section class="list-section centered">
         <div class="tabs">

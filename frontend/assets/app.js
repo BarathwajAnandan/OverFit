@@ -186,40 +186,88 @@ function openDetails(node)
   const panel = document.getElementById('detailsPanel')
   const content = document.getElementById('detailsContent')
   const title = document.getElementById('detailsTitle')
+  const typeEl = document.getElementById('detailsType')
+  const graphSection = document.querySelector('.graph-section')
 
-  title.textContent = node.label || 'Details'
+  // Set title and type
+  title.textContent = node.label || node.name || 'Node Details'
+  typeEl.textContent = node.type || 'unknown'
+  typeEl.className = `details-type ${node.type || 'unknown'}`
 
-  const rows = []
-  Object.keys(node).forEach(key =>
-  {
-    if (['x', 'y', 'z', 'vx', 'vy', 'vz', 'fx', 'fy', 'fz'].includes(key))
-    {
+  // Define the properties to show and their display configuration
+  const propertiesToShow = [
+    { key: 'id', label: 'ID', type: 'text' },
+    { key: 'type', label: 'Type', type: 'text' },
+    { key: 'name', label: 'Model Name', type: 'text', condition: node => node.type === 'model' },
+    { key: 'label', label: 'Label', type: 'text' },
+    { key: 'text', label: 'Text', type: 'text' },
+    { key: 'problem_type', label: 'Problem Type', type: 'text', condition: node => node.type === 'problem' },
+    { key: 'variables', label: 'Variables', type: 'code' },
+    { key: 'metadata', label: 'Metadata', type: 'code' }
+  ]
+
+  // Build the content HTML
+  const sections = []
+  
+  propertiesToShow.forEach(prop => {
+    // Skip if there's a condition and it's not met
+    if (prop.condition && !prop.condition(node)) {
       return
     }
-    rows.push(`<div class="k">${key}</div><div class="v">${formatValue(node[key])}</div>`)
+    
+    const value = node[prop.key]
+    
+    // Skip if value doesn't exist or is empty
+    if (value === undefined || value === null || value === '') {
+      return
+    }
+    
+    let displayValue = value
+    let valueClass = 'details-value'
+    
+    // Format the value based on type
+    if (prop.type === 'code') {
+      valueClass += ' code'
+      if (typeof value === 'object') {
+        displayValue = JSON.stringify(value, null, 2)
+      }
+    } else {
+      displayValue = String(value)
+    }
+    
+    sections.push(`
+      <div class="details-section">
+        <label class="details-label">${prop.label}</label>
+        <div class="${valueClass}">${displayValue}</div>
+      </div>
+    `)
   })
-
-  content.innerHTML = `<div class="kv">${rows.join('')}</div>`
+  
+  // If no sections, show a message
+  if (sections.length === 0) {
+    content.innerHTML = '<div class="details-section"><div class="details-value empty">No details available</div></div>'
+  } else {
+    content.innerHTML = sections.join('')
+  }
+  
   panel.classList.remove('hidden')
+  if (graphSection) {
+    graphSection.classList.add('sidebar-open')
+  }
 }
 
 function closeDetails()
 {
-  document.getElementById('detailsPanel').classList.add('hidden')
+  const panel = document.getElementById('detailsPanel')
+  const graphSection = document.querySelector('.graph-section')
+  
+  panel.classList.add('hidden')
+  if (graphSection) {
+    graphSection.classList.remove('sidebar-open')
+  }
 }
 
-function formatValue(value)
-{
-  if (Array.isArray(value))
-  {
-    return value.join(', ')
-  }
-  if (typeof value === 'object' && value !== null)
-  {
-    return JSON.stringify(value)
-  }
-  return String(value)
-}
+
 
 function initHeader()
 {
