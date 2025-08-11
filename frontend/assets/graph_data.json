@@ -1,0 +1,1697 @@
+{
+  "nodes": [
+    {
+      "id": "issue_805",
+      "type": "problem",
+      "label": "cuda12.6 link issue with compilation errors",
+      "text": "cuda12.6 link issue with compilation errors",
+      "problem_type": "compilation",
+      "variables": "cuda_version:12.6,compiler:gcc",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/805\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_799",
+      "type": "problem",
+      "label": "Loss computation is wrong - incorrect pairing of l...",
+      "text": "Loss computation is wrong - incorrect pairing of logits and labels",
+      "problem_type": "algorithm",
+      "variables": "loss_function",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/799\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_562",
+      "type": "problem",
+      "label": "LLM.c in google colab setup",
+      "text": "LLM.c in google colab setup",
+      "problem_type": "setup",
+      "variables": "platform:colab",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/562\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_798",
+      "type": "problem",
+      "label": "How to support deepseek r1",
+      "text": "How to support deepseek r1",
+      "problem_type": "feature_request",
+      "variables": "model:deepseek_r1",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/798\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_796",
+      "type": "problem",
+      "label": "Wrong MFU with blackwell GPUs",
+      "text": "Wrong MFU with blackwell GPUs",
+      "problem_type": "performance",
+      "variables": "gpu:rtx_5080",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/796\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_795",
+      "type": "problem",
+      "label": "Miscalculating of head index and series index in a...",
+      "text": "Miscalculating of head index and series index in attention kernel",
+      "problem_type": "bug",
+      "variables": "kernel:attention_softmax",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/795\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_785",
+      "type": "problem",
+      "label": "GitHub access restricted error in hellaswag.py",
+      "text": "GitHub access restricted error in hellaswag.py",
+      "problem_type": "external_dependency",
+      "variables": "service:github",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/785\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_777",
+      "type": "problem",
+      "label": "How to make customized dataset",
+      "text": "How to make customized dataset",
+      "problem_type": "documentation",
+      "variables": "dataset:custom",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/777\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_768",
+      "type": "problem",
+      "label": "Problem debugging cuda kernel functions",
+      "text": "Problem debugging cuda kernel functions",
+      "problem_type": "debugging",
+      "variables": "tool:vscode",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/768\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_749",
+      "type": "problem",
+      "label": "Error no instance of overloaded function matches a...",
+      "text": "Error no instance of overloaded function matches argument list",
+      "problem_type": "compilation",
+      "variables": "compiler:nvcc",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/749\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_492",
+      "type": "problem",
+      "label": "Cudnn error cudnn_att.cpp on train_gptcu",
+      "text": "Cudnn error cudnn_att.cpp on train_gptcu",
+      "problem_type": "runtime",
+      "variables": "library:cudnn,gpu:rtx_4090",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/492\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_642",
+      "type": "problem",
+      "label": "Windows issue with Cuda Toolkit 12.5 and MSVC comp...",
+      "text": "Windows issue with Cuda Toolkit 12.5 and MSVC compiler 17.10",
+      "problem_type": "compatibility",
+      "variables": "os:windows,cuda:12.5,compiler:msvc_17.10",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/642\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_692",
+      "type": "problem",
+      "label": "Multi-GPU config enabled when using one GPU",
+      "text": "Multi-GPU config enabled when using one GPU",
+      "problem_type": "configuration",
+      "variables": "gpu_count:1",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/692\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_622",
+      "type": "problem",
+      "label": "sel4 + llm.c for mission critical systems",
+      "text": "sel4 + llm.c for mission critical systems",
+      "problem_type": "feature_request",
+      "variables": "platform:sel4",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/622\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_566",
+      "type": "problem",
+      "label": "OSError: Memory mapping file failed",
+      "text": "OSError: Memory mapping file failed",
+      "problem_type": "runtime",
+      "variables": "platform:hpc,memory:384gb",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/566\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_312",
+      "type": "problem",
+      "label": "void tokenizer_init failed assertion",
+      "text": "void tokenizer_init failed assertion",
+      "problem_type": "runtime",
+      "variables": "component:tokenizer",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/312\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_563",
+      "type": "problem",
+      "label": "Running quick start on CPU on Macbook Pro M2",
+      "text": "Running quick start on CPU on Macbook Pro M2",
+      "problem_type": "setup",
+      "variables": "platform:macos,cpu:m2",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/563\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_555",
+      "type": "problem",
+      "label": "Compatibility issues with earlier c++ versions",
+      "text": "Compatibility issues with earlier c++ versions",
+      "problem_type": "compatibility",
+      "variables": "cpp_version:pre17",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/555\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_557",
+      "type": "problem",
+      "label": "Cannot understand cublasGemmStridedBatchedEx call ...",
+      "text": "Cannot understand cublasGemmStridedBatchedEx call in attention_forward",
+      "problem_type": "documentation",
+      "variables": "function:cublas_gemm",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/557\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_527",
+      "type": "problem",
+      "label": "ERROR on AMD GPU",
+      "text": "ERROR on AMD GPU",
+      "problem_type": "compatibility",
+      "variables": "gpu:amd_7900xtx,platform:rocm",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/527\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_428",
+      "type": "problem",
+      "label": "Mismatch of dweight at layernorm_backward.cu",
+      "text": "Mismatch of dweight at layernorm_backward.cu",
+      "problem_type": "bug",
+      "variables": "kernel:layernorm_backward,precision:bfloat",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/428\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_484",
+      "type": "problem",
+      "label": "fineweb.py requires datasets python module",
+      "text": "fineweb.py requires datasets python module",
+      "problem_type": "dependency",
+      "variables": "module:datasets",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/484\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_229",
+      "type": "problem",
+      "label": "Windows Github actions / workflow successfully bui...",
+      "text": "Windows Github actions / workflow successfully building",
+      "problem_type": "ci_cd",
+      "variables": "platform:windows,tool:github_actions",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/229\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_246",
+      "type": "problem",
+      "label": "WikiText 103 evaluation",
+      "text": "WikiText 103 evaluation",
+      "problem_type": "feature_request",
+      "variables": "dataset:wikitext103",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/246\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_369",
+      "type": "problem",
+      "label": "MultiGPU training hangs",
+      "text": "MultiGPU training hangs",
+      "problem_type": "bug",
+      "variables": "feature:multi_gpu,component:cudastreams",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/369\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_379",
+      "type": "problem",
+      "label": "Llm on small models",
+      "text": "Llm on small models",
+      "problem_type": "feature_request",
+      "variables": "model_size:small",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/379\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_368",
+      "type": "problem",
+      "label": "make: Error 2 on Windows",
+      "text": "make: Error 2 on Windows",
+      "problem_type": "compilation",
+      "variables": "os:windows,compiler:cl",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/368\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_356",
+      "type": "problem",
+      "label": "About pull request of custom kernel implementation",
+      "text": "About pull request of custom kernel implementation",
+      "problem_type": "contribution",
+      "variables": "component:kernel,type:optimization",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/356\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_202",
+      "type": "problem",
+      "label": "gitignore does not ignore all binary files",
+      "text": "gitignore does not ignore all binary files",
+      "problem_type": "repository",
+      "variables": "file:.gitignore",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/202\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_242",
+      "type": "problem",
+      "label": "CI Mac issue with resources for Python",
+      "text": "CI Mac issue with resources for Python",
+      "problem_type": "ci_cd",
+      "variables": "platform:mac,tool:github_actions",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/242\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_308",
+      "type": "problem",
+      "label": "Possible NULL Pointer Dereference",
+      "text": "Possible NULL Pointer Dereference",
+      "problem_type": "bug",
+      "variables": "type:memory_safety",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/308\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_212",
+      "type": "problem",
+      "label": "bug: something goes wrong at larger batch sizes",
+      "text": "bug: something goes wrong at larger batch sizes",
+      "problem_type": "bug",
+      "variables": "parameter:batch_size",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/212\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_19",
+      "type": "problem",
+      "label": "Error: must forward with targets before backward",
+      "text": "Error: must forward with targets before backward",
+      "problem_type": "runtime",
+      "variables": "phase:training",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/19\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_245",
+      "type": "problem",
+      "label": "Refactoring all shared cuda helper methods",
+      "text": "Refactoring all shared cuda helper methods",
+      "problem_type": "code_quality",
+      "variables": "component:cuda_helpers",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/245\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_144",
+      "type": "problem",
+      "label": "Accumulate in double instead of float",
+      "text": "Accumulate in double instead of float",
+      "problem_type": "precision",
+      "variables": "datatype:float,datatype:double",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/144\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_154",
+      "type": "problem",
+      "label": "from-scratch init the model",
+      "text": "from-scratch init the model",
+      "problem_type": "feature_request",
+      "variables": "initialization:random",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/154\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_127",
+      "type": "problem",
+      "label": "WSL setup details",
+      "text": "WSL setup details",
+      "problem_type": "setup",
+      "variables": "platform:wsl",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/127\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_217",
+      "type": "problem",
+      "label": "CI tests dependent on connectivity/uptime of huggi...",
+      "text": "CI tests dependent on connectivity/uptime of huggingface",
+      "problem_type": "ci_cd",
+      "variables": "dependency:huggingface",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/217\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_206",
+      "type": "problem",
+      "label": "Suddenly Out of memory on train/python",
+      "text": "Suddenly Out of memory on train/python",
+      "problem_type": "runtime",
+      "variables": "gpu:4090,error:oom",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/206\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_135",
+      "type": "problem",
+      "label": "train_gpt2.cu have not backward?",
+      "text": "train_gpt2.cu have not backward?",
+      "problem_type": "documentation",
+      "variables": "component:backprop",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/135\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_178",
+      "type": "problem",
+      "label": "__stcs in layernorm_forward_kernel3 function",
+      "text": "__stcs in layernorm_forward_kernel3 function",
+      "problem_type": "bug",
+      "variables": "function:stcs,precision:half",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/178\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_74",
+      "type": "problem",
+      "label": "OMP: Error 15: Initializing libomp.dylib",
+      "text": "OMP: Error 15: Initializing libomp.dylib",
+      "problem_type": "runtime",
+      "variables": "library:openmp,platform:mac",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/74\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_147",
+      "type": "problem",
+      "label": "use const properly in function signatures",
+      "text": "use const properly in function signatures",
+      "problem_type": "code_quality",
+      "variables": "keyword:const",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/147\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_157",
+      "type": "problem",
+      "label": "Understand codebase with custom GPT",
+      "text": "Understand codebase with custom GPT",
+      "problem_type": "documentation",
+      "variables": "tool:gpt",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/157\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_148",
+      "type": "problem",
+      "label": "Qlora on CPU Error with Qwen-14B-Chat",
+      "text": "Qlora on CPU Error with Qwen-14B-Chat",
+      "problem_type": "runtime",
+      "variables": "model:qwen14b,method:qlora",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/148\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_94",
+      "type": "problem",
+      "label": "Suggested to add check for return value of Malloc",
+      "text": "Suggested to add check for return value of Malloc",
+      "problem_type": "code_quality",
+      "variables": "function:malloc",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/94\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_85",
+      "type": "problem",
+      "label": "no CUDA-capable device is detected",
+      "text": "no CUDA-capable device is detected",
+      "problem_type": "setup",
+      "variables": "platform:wsl2,cuda:11.5",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/85\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_114",
+      "type": "problem",
+      "label": "CUDA ERROR illegal memory access",
+      "text": "CUDA ERROR illegal memory access",
+      "problem_type": "runtime",
+      "variables": "error:illegal_memory_access",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/114\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_103",
+      "type": "problem",
+      "label": "Infini-attention implementation",
+      "text": "Infini-attention implementation",
+      "problem_type": "feature_request",
+      "variables": "feature:infini_attention",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/103\"}",
+      "karma": 14
+    },
+    {
+      "id": "issue_54",
+      "type": "problem",
+      "label": "Fused bias with matmul using cublasLtMatmul",
+      "text": "Fused bias with matmul using cublasLtMatmul",
+      "problem_type": "optimization",
+      "variables": "function:cublasLtMatmul",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/54\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_83",
+      "type": "problem",
+      "label": "Suggestion: Discussions tab for general help",
+      "text": "Suggestion: Discussions tab for general help",
+      "problem_type": "repository",
+      "variables": "feature:discussions",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/83\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_86",
+      "type": "problem",
+      "label": "What else can I say, awesome",
+      "text": "What else can I say, awesome",
+      "problem_type": "feedback",
+      "variables": "type:positive",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/86\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_91",
+      "type": "problem",
+      "label": "AI is Artificial Idiot",
+      "text": "AI is Artificial Idiot",
+      "problem_type": "feedback",
+      "variables": "type:negative",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/91\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_96",
+      "type": "problem",
+      "label": "Does it have interactive mode like ChatGPT",
+      "text": "Does it have interactive mode like ChatGPT",
+      "problem_type": "feature_request",
+      "variables": "feature:interactive_mode",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/96\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_57",
+      "type": "problem",
+      "label": "Precompute scaling factor in gelu_forward and gelu...",
+      "text": "Precompute scaling factor in gelu_forward and gelu_backward",
+      "problem_type": "optimization",
+      "variables": "function:gelu",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/57\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_81",
+      "type": "problem",
+      "label": "RuntimeError: must forward with targets before bac...",
+      "text": "RuntimeError: must forward with targets before backward",
+      "problem_type": "runtime",
+      "variables": "phase:training",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/81\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_52",
+      "type": "problem",
+      "label": "Clarify param_sizes calculation",
+      "text": "Clarify param_sizes calculation",
+      "problem_type": "documentation",
+      "variables": "function:gpt2_build_from_checkpoint",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/52\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_73",
+      "type": "problem",
+      "label": "AssertionError: Torch not compiled with CUDA enabl...",
+      "text": "AssertionError: Torch not compiled with CUDA enabled",
+      "problem_type": "setup",
+      "variables": "library:pytorch",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/73\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_17",
+      "type": "problem",
+      "label": "error running makefile train_gpt2 on windows",
+      "text": "error running makefile train_gpt2 on windows",
+      "problem_type": "compilation",
+      "variables": "os:windows",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/17\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_30",
+      "type": "problem",
+      "label": "python train_gpt2.py errors after 10 iterations",
+      "text": "python train_gpt2.py errors after 10 iterations",
+      "problem_type": "runtime",
+      "variables": "platform:mac",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/30\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_13",
+      "type": "problem",
+      "label": "Port special architecture into project",
+      "text": "Port special architecture into project",
+      "problem_type": "feature_request",
+      "variables": "architecture:llama2rnn",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/13\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_41",
+      "type": "problem",
+      "label": "project license",
+      "text": "project license",
+      "problem_type": "repository",
+      "variables": "file:license",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/41\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_43",
+      "type": "problem",
+      "label": "Add .gitignore to project",
+      "text": "Add .gitignore to project",
+      "problem_type": "repository",
+      "variables": "file:.gitignore",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/43\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_29",
+      "type": "problem",
+      "label": "Waiting for CUDA implement",
+      "text": "Waiting for CUDA implement",
+      "problem_type": "feature_request",
+      "variables": "implementation:cuda",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/29\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_8",
+      "type": "problem",
+      "label": "OverflowError: cant convert negative int to unsign...",
+      "text": "OverflowError: cant convert negative int to unsigned",
+      "problem_type": "runtime",
+      "variables": "platform:mac",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/8\"}",
+      "karma": 12
+    },
+    {
+      "id": "issue_32",
+      "type": "problem",
+      "label": "Error: backward before forward",
+      "text": "Error: backward before forward",
+      "problem_type": "runtime",
+      "variables": "phase:training",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/32\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_22",
+      "type": "problem",
+      "label": "Will it be a walkthrough tutorial",
+      "text": "Will it be a walkthrough tutorial",
+      "problem_type": "documentation",
+      "variables": "type:tutorial",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/22\"}",
+      "karma": 13
+    },
+    {
+      "id": "issue_7",
+      "type": "problem",
+      "label": "Dead stores",
+      "text": "Dead stores",
+      "problem_type": "code_quality",
+      "variables": "analysis:static",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/7\"}",
+      "karma": 12
+    },
+    {
+      "id": "issue_6",
+      "type": "problem",
+      "label": "Not all heroes wear capes",
+      "text": "Not all heroes wear capes",
+      "problem_type": "feedback",
+      "variables": "type:appreciation",
+      "metadata": "{\"url\":\"https://github.com/karpathy/llm.c/issues/6\"}",
+      "karma": 12
+    },
+    {
+      "id": "pr_703",
+      "type": "solution",
+      "label": "Move WIN32 code from utils.h to unistd.h",
+      "expression": "Move WIN32 code from utils.h to unistd.h",
+      "problem_id": "issue_642",
+      "verified": true,
+      "metadata": "{\"pr_url\":\"https://github.com/karpathy/llm.c/pull/703\"}",
+      "reuseScore": 0.6599999999999999,
+      "upvotes": 16
+    },
+    {
+      "id": "pr_476",
+      "type": "solution",
+      "label": "Accumulate in float32 temp array before writing as...",
+      "expression": "Accumulate in float32 temp array before writing as bfloat16",
+      "problem_id": "issue_428",
+      "verified": true,
+      "metadata": "{\"pr_url\":\"https://github.com/karpathy/llm.c/pull/476\"}",
+      "reuseScore": 0.6599999999999999,
+      "upvotes": 16
+    },
+    {
+      "id": "pr_382",
+      "type": "solution",
+      "label": "Fix for MultiGPU training hang issue",
+      "expression": "Fix for MultiGPU training hang issue",
+      "problem_id": "issue_369",
+      "verified": true,
+      "metadata": "{\"pr_url\":\"https://github.com/karpathy/llm.c/pull/382\"}",
+      "reuseScore": 0.6599999999999999,
+      "upvotes": 16
+    },
+    {
+      "id": "pr_239",
+      "type": "solution",
+      "label": "Add binary files to .gitignore with minimal msvc i...",
+      "expression": "Add binary files to .gitignore with minimal msvc ignores",
+      "problem_id": "issue_202",
+      "verified": true,
+      "metadata": "{\"pr_url\":\"https://github.com/karpathy/llm.c/pull/239\"}",
+      "reuseScore": 0.6599999999999999,
+      "upvotes": 16
+    },
+    {
+      "id": "pr_221",
+      "type": "solution",
+      "label": "Accumulate in double precision for better accuracy",
+      "expression": "Accumulate in double precision for better accuracy",
+      "problem_id": "issue_144",
+      "verified": true,
+      "metadata": "{\"pr_url\":\"https://github.com/karpathy/llm.c/pull/221\"}",
+      "reuseScore": 0.6599999999999999,
+      "upvotes": 16
+    },
+    {
+      "id": "pr_164",
+      "type": "solution",
+      "label": "Refactor function declarations to use const proper...",
+      "expression": "Refactor function declarations to use const properly",
+      "problem_id": "issue_147",
+      "verified": true,
+      "metadata": "{\"pr_url\":\"https://github.com/karpathy/llm.c/pull/164\"}",
+      "reuseScore": 0.6599999999999999,
+      "upvotes": 16
+    },
+    {
+      "id": "gpt2",
+      "type": "model",
+      "label": "GPT-2",
+      "name": "GPT-2",
+      "metadata": "{}",
+      "size": "Small",
+      "provider": "OpenAI"
+    },
+    {
+      "id": "gpt2_124m",
+      "type": "model",
+      "label": "GPT-2 124M",
+      "name": "GPT-2 124M",
+      "metadata": "{}",
+      "size": "Small",
+      "provider": "OpenAI"
+    },
+    {
+      "id": "qwen_14b",
+      "type": "model",
+      "label": "Qwen-14B-Chat",
+      "name": "Qwen-14B-Chat",
+      "metadata": "{}",
+      "size": "Medium",
+      "provider": "Other"
+    },
+    {
+      "id": "deepseek_r1",
+      "type": "model",
+      "label": "DeepSeek R1",
+      "name": "DeepSeek R1",
+      "metadata": "{}",
+      "size": "Small",
+      "provider": "Microsoft"
+    },
+    {
+      "id": "llama2",
+      "type": "model",
+      "label": "Llama 2",
+      "name": "Llama 2",
+      "metadata": "{}",
+      "size": "Small",
+      "provider": "Meta"
+    },
+    {
+      "id": "claude_opus",
+      "type": "model",
+      "label": "Claude Opus",
+      "name": "Claude Opus",
+      "metadata": "{}",
+      "size": "Small",
+      "provider": "Other"
+    },
+    {
+      "id": "gpt4",
+      "type": "model",
+      "label": "GPT-4",
+      "name": "GPT-4",
+      "metadata": "{}",
+      "size": "Large",
+      "provider": "OpenAI"
+    },
+    {
+      "id": "cuda",
+      "type": "concept",
+      "label": "CUDA",
+      "name": "CUDA",
+      "definition": "NVIDIA CUDA parallel computing platform and API",
+      "metadata": "{}"
+    },
+    {
+      "id": "gpu",
+      "type": "concept",
+      "label": "GPU",
+      "name": "GPU",
+      "definition": "Graphics Processing Unit for parallel computation",
+      "metadata": "{}"
+    },
+    {
+      "id": "memory",
+      "type": "concept",
+      "label": "Memory Management",
+      "name": "Memory Management",
+      "definition": "Memory allocation and management in system programming",
+      "metadata": "{}"
+    },
+    {
+      "id": "compilation",
+      "type": "concept",
+      "label": "Compilation",
+      "name": "Compilation",
+      "definition": "Process of converting source code to executable",
+      "metadata": "{}"
+    },
+    {
+      "id": "multi_gpu",
+      "type": "concept",
+      "label": "Multi-GPU",
+      "name": "Multi-GPU",
+      "definition": "Using multiple GPUs for parallel training",
+      "metadata": "{}"
+    },
+    {
+      "id": "windows",
+      "type": "concept",
+      "label": "Windows",
+      "name": "Windows",
+      "definition": "Windows operating system compatibility",
+      "metadata": "{}"
+    },
+    {
+      "id": "loss_computation",
+      "type": "concept",
+      "label": "Loss Computation",
+      "name": "Loss Computation",
+      "definition": "Calculation of loss function in neural networks",
+      "metadata": "{}"
+    },
+    {
+      "id": "cudnn",
+      "type": "concept",
+      "label": "cuDNN",
+      "name": "cuDNN",
+      "definition": "NVIDIA CUDA Deep Neural Network library",
+      "metadata": "{}"
+    },
+    {
+      "id": "training",
+      "type": "concept",
+      "label": "Training",
+      "name": "Training",
+      "definition": "Model training process",
+      "metadata": "{}"
+    },
+    {
+      "id": "backpropagation",
+      "type": "concept",
+      "label": "Backpropagation",
+      "name": "Backpropagation",
+      "definition": "Gradient computation through backward pass",
+      "metadata": "{}"
+    },
+    {
+      "id": "kernel",
+      "type": "concept",
+      "label": "CUDA Kernel",
+      "name": "CUDA Kernel",
+      "definition": "Function executed on GPU",
+      "metadata": "{}"
+    },
+    {
+      "id": "mpi",
+      "type": "concept",
+      "label": "MPI",
+      "name": "MPI",
+      "definition": "Message Passing Interface for distributed computing",
+      "metadata": "{}"
+    },
+    {
+      "id": "openmp",
+      "type": "concept",
+      "label": "OpenMP",
+      "name": "OpenMP",
+      "definition": "API for multi-platform shared-memory parallel programming",
+      "metadata": "{}"
+    },
+    {
+      "id": "layernorm",
+      "type": "concept",
+      "label": "Layer Normalization",
+      "name": "Layer Normalization",
+      "definition": "Normalization technique in neural networks",
+      "metadata": "{}"
+    },
+    {
+      "id": "attention",
+      "type": "concept",
+      "label": "Attention Mechanism",
+      "name": "Attention Mechanism",
+      "definition": "Attention mechanism in transformer models",
+      "metadata": "{}"
+    },
+    {
+      "id": "gpt2",
+      "type": "concept",
+      "label": "GPT-2",
+      "name": "GPT-2",
+      "definition": "Generative Pre-trained Transformer 2 model",
+      "metadata": "{}"
+    },
+    {
+      "id": "tokenization",
+      "type": "concept",
+      "label": "Tokenization",
+      "name": "Tokenization",
+      "definition": "Process of converting text to tokens",
+      "metadata": "{}"
+    },
+    {
+      "id": "dataset",
+      "type": "concept",
+      "label": "Dataset",
+      "name": "Dataset",
+      "definition": "Training or evaluation data",
+      "metadata": "{}"
+    },
+    {
+      "id": "ci_cd",
+      "type": "concept",
+      "label": "CI/CD",
+      "name": "CI/CD",
+      "definition": "Continuous Integration and Deployment",
+      "metadata": "{}"
+    },
+    {
+      "id": "macos",
+      "type": "concept",
+      "label": "macOS",
+      "name": "macOS",
+      "definition": "Apple macOS operating system",
+      "metadata": "{}"
+    },
+    {
+      "id": "wsl",
+      "type": "concept",
+      "label": "WSL",
+      "name": "WSL",
+      "definition": "Windows Subsystem for Linux",
+      "metadata": "{}"
+    },
+    {
+      "id": "precision_upgrade",
+      "type": "method",
+      "label": "Precision Upgrade",
+      "name": "Precision Upgrade",
+      "preconditions": "Accumulation operations with precision loss",
+      "metadata": "{}"
+    },
+    {
+      "id": "code_refactoring",
+      "type": "method",
+      "label": "Code Refactoring",
+      "name": "Code Refactoring",
+      "preconditions": "Code quality issues",
+      "metadata": "{}"
+    },
+    {
+      "id": "dependency_fix",
+      "type": "method",
+      "label": "Dependency Fix",
+      "name": "Dependency Fix",
+      "preconditions": "Missing or incompatible dependencies",
+      "metadata": "{}"
+    },
+    {
+      "id": "platform_adaptation",
+      "type": "method",
+      "label": "Platform Adaptation",
+      "name": "Platform Adaptation",
+      "preconditions": "Platform-specific issues",
+      "metadata": "{}"
+    },
+    {
+      "id": "synchronization_fix",
+      "type": "method",
+      "label": "Synchronization Fix",
+      "name": "Synchronization Fix",
+      "preconditions": "Multi-threaded or multi-GPU sync issues",
+      "metadata": "{}"
+    },
+    {
+      "id": "downgrade_version",
+      "type": "method",
+      "label": "Version Downgrade",
+      "name": "Version Downgrade",
+      "preconditions": "Compatibility issues with new versions",
+      "metadata": "{}"
+    },
+    {
+      "id": "manual_patch",
+      "type": "method",
+      "label": "Manual Patch",
+      "name": "Manual Patch",
+      "preconditions": "Known code issues without official fix",
+      "metadata": "{}"
+    },
+    {
+      "id": "environment_setup",
+      "type": "method",
+      "label": "Environment Setup",
+      "name": "Environment Setup",
+      "preconditions": "Platform-specific configuration needed",
+      "metadata": "{}"
+    }
+  ],
+  "links": [
+    {
+      "source": "gpt2",
+      "target": "issue_154",
+      "type": "can_solve",
+      "strength": 0.8999999761581421,
+      "confidence": 0.8999999761581421
+    },
+    {
+      "source": "gpt2",
+      "target": "issue_246",
+      "type": "can_solve",
+      "strength": 0.800000011920929,
+      "confidence": 0.800000011920929
+    },
+    {
+      "source": "gpt2",
+      "target": "issue_799",
+      "type": "can_solve",
+      "strength": 0.699999988079071,
+      "confidence": 0.699999988079071
+    },
+    {
+      "source": "gpt2_124m",
+      "target": "issue_799",
+      "type": "can_solve",
+      "strength": 0.6000000238418579,
+      "confidence": 0.6000000238418579
+    },
+    {
+      "source": "deepseek_r1",
+      "target": "issue_798",
+      "type": "can_solve",
+      "strength": 0.5,
+      "confidence": 0.5
+    },
+    {
+      "source": "llama2",
+      "target": "issue_13",
+      "type": "can_solve",
+      "strength": 0.4000000059604645,
+      "confidence": 0.4000000059604645
+    },
+    {
+      "source": "claude_opus",
+      "target": "issue_157",
+      "type": "can_solve",
+      "strength": 0.949999988079071,
+      "confidence": 0.949999988079071
+    },
+    {
+      "source": "claude_opus",
+      "target": "issue_245",
+      "type": "can_solve",
+      "strength": 0.8999999761581421,
+      "confidence": 0.8999999761581421
+    },
+    {
+      "source": "claude_opus",
+      "target": "issue_356",
+      "type": "can_solve",
+      "strength": 0.8500000238418579,
+      "confidence": 0.8500000238418579
+    },
+    {
+      "source": "gpt4",
+      "target": "issue_103",
+      "type": "can_solve",
+      "strength": 0.800000011920929,
+      "confidence": 0.800000011920929
+    },
+    {
+      "source": "gpt4",
+      "target": "issue_157",
+      "type": "can_solve",
+      "strength": 0.8999999761581421,
+      "confidence": 0.8999999761581421
+    },
+    {
+      "source": "issue_805",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_805",
+      "target": "compilation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_805",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_805",
+      "target": "compilation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_799",
+      "target": "loss_computation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_799",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_799",
+      "target": "loss_computation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_799",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_562",
+      "target": "gpu",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_562",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_798",
+      "target": "gpt2",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_796",
+      "target": "gpu",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_795",
+      "target": "attention",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_795",
+      "target": "kernel",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_795",
+      "target": "attention",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_795",
+      "target": "kernel",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_785",
+      "target": "dataset",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_777",
+      "target": "dataset",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_768",
+      "target": "kernel",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_768",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_749",
+      "target": "compilation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_492",
+      "target": "cudnn",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_492",
+      "target": "cudnn",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_642",
+      "target": "windows",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_642",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_642",
+      "target": "windows",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_642",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_692",
+      "target": "multi_gpu",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_692",
+      "target": "mpi",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_692",
+      "target": "multi_gpu",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_692",
+      "target": "mpi",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_566",
+      "target": "memory",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_566",
+      "target": "memory",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_312",
+      "target": "tokenization",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_312",
+      "target": "tokenization",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_563",
+      "target": "macos",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_557",
+      "target": "attention",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_527",
+      "target": "gpu",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_428",
+      "target": "layernorm",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_428",
+      "target": "backpropagation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_484",
+      "target": "dataset",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_229",
+      "target": "ci_cd",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_229",
+      "target": "windows",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_246",
+      "target": "dataset",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_246",
+      "target": "gpt2",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_369",
+      "target": "multi_gpu",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_368",
+      "target": "windows",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_368",
+      "target": "compilation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_356",
+      "target": "kernel",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_242",
+      "target": "ci_cd",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_242",
+      "target": "macos",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_308",
+      "target": "memory",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_212",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_19",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_19",
+      "target": "backpropagation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_245",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_245",
+      "target": "kernel",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_144",
+      "target": "kernel",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_154",
+      "target": "gpt2",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_154",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_127",
+      "target": "wsl",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_127",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_217",
+      "target": "ci_cd",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_206",
+      "target": "memory",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_206",
+      "target": "gpu",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_135",
+      "target": "backpropagation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_135",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_178",
+      "target": "layernorm",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_178",
+      "target": "kernel",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_74",
+      "target": "openmp",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_74",
+      "target": "macos",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_94",
+      "target": "memory",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_85",
+      "target": "wsl",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_85",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_114",
+      "target": "memory",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_103",
+      "target": "attention",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_54",
+      "target": "cuda",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_57",
+      "target": "kernel",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_81",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_17",
+      "target": "windows",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_17",
+      "target": "compilation",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "issue_32",
+      "target": "training",
+      "type": "about",
+      "strength": 0.7
+    },
+    {
+      "source": "precision_upgrade",
+      "target": "kernel",
+      "type": "uses",
+      "strength": 0.6
+    },
+    {
+      "source": "platform_adaptation",
+      "target": "windows",
+      "type": "uses",
+      "strength": 0.6
+    },
+    {
+      "source": "platform_adaptation",
+      "target": "cuda",
+      "type": "uses",
+      "strength": 0.6
+    },
+    {
+      "source": "synchronization_fix",
+      "target": "multi_gpu",
+      "type": "uses",
+      "strength": 0.6
+    },
+    {
+      "source": "pr_703",
+      "target": "windows",
+      "type": "references",
+      "strength": 0.5
+    },
+    {
+      "source": "pr_476",
+      "target": "layernorm",
+      "type": "references",
+      "strength": 0.5
+    },
+    {
+      "source": "pr_382",
+      "target": "multi_gpu",
+      "type": "references",
+      "strength": 0.5
+    },
+    {
+      "source": "pr_221",
+      "target": "kernel",
+      "type": "references",
+      "strength": 0.5
+    },
+    {
+      "source": "pr_164",
+      "target": "compilation",
+      "type": "references",
+      "strength": 0.5
+    },
+    {
+      "source": "pr_476",
+      "target": "pr_221",
+      "type": "similar_to",
+      "strength": 0.800000011920929,
+      "similarity": 0.800000011920929
+    },
+    {
+      "source": "pr_164",
+      "target": "pr_239",
+      "type": "similar_to",
+      "strength": 0.6000000238418579,
+      "similarity": 0.6000000238418579
+    }
+  ],
+  "exported_at": "2025-08-10T17:00:04.256282",
+  "node_count": 111,
+  "link_count": 104
+}

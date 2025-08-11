@@ -289,6 +289,8 @@ a:hover {
 .legend-dot.problem { background: #fdba74; }
 .legend-dot.solution { background: #34d399; }
 .legend-dot.model { background: #60a5fa; }
+.legend-dot.concept { background: #a78bfa; }
+.legend-dot.method { background: #fb7185; }
 
 .graph-canvas {
   width: 100%;

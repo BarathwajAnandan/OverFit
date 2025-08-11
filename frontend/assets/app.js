@@ -1,32 +1,51 @@
 /* global ForceGraph3D */
 
-// Basic placeholder data schema kept flexible for later changes
-// Node types: problem | solution | model
-// Link types: similarity | solves | produced_by | related
+// Load real graph data from KuzuDB export
+let placeholderGraph = {
+  nodes: [],
+  links: []
+}
 
-const placeholderGraph = {
-  nodes: [
-    { id: 'p1', type: 'problem', label: 'Minify JS without breaking React keys', domain: 'Code', tags: ['react', 'build'], karma: 12, views: 134 },
-    { id: 'p2', type: 'problem', label: 'Extract entities from legal contracts', domain: 'Research', tags: ['nlp', 'contracts'], karma: 9, views: 211 },
-    { id: 'p3', type: 'problem', label: 'Speed up vector search with PQ/IVF', domain: 'Research', tags: ['vector-db', 'faiss'], karma: 3, views: 89 },
-    { id: 'p4', type: 'problem', label: 'Prevent prompt injection in tools', domain: 'Code', tags: ['security', 'agents'], karma: 5, views: 177 },
-    { id: 's1', type: 'solution', label: 'AST-aware minifier config', reuseScore: 0.86, cost: '$', upvotes: 17 },
-    { id: 's2', type: 'solution', label: 'Few-shot contract NER', reuseScore: 0.78, cost: '$$', upvotes: 33 },
-    { id: 'm1', type: 'model', label: 'Llama 3 70B', size: 'Large', provider: 'Meta' },
-    { id: 'm2', type: 'model', label: 'GPT-4o', size: 'XL', provider: 'OpenAI' },
-    { id: 'm3', type: 'model', label: 'Phi-3 Mini', size: 'Small', provider: 'Microsoft' },
-    { id: 'm4', type: 'model', label: 'Claude Sonnet', size: 'Large', provider: 'Anthropic' },
-    { id: 'm5', type: 'model', label: 'Qwen', size: 'Large', provider: 'Alibaba' },
-    { id: 'm6', type: 'model', label: 'GPT-5', size: 'XL', provider: 'OpenAI' }
-  ],
-  links: [
-    { source: 'p1', target: 's1', type: 'solves', strength: 1.0 },
-    { source: 'p2', target: 's2', type: 'solves', strength: 1.0 },
-    { source: 's1', target: 'm3', type: 'produced_by', strength: 1.0 },
-    { source: 's2', target: 'm2', type: 'produced_by', strength: 1.0 },
-    { source: 'p1', target: 'p2', type: 'similarity', strength: 0.28 },
-    { source: 's1', target: 's2', type: 'related', strength: 0.24 },
-  ]
+// Load real data from exported JSON
+async function loadGraphData()
+{
+  try
+  {
+    const response = await fetch('./assets/graph_data.json')
+    const data = await response.json()
+    placeholderGraph = {
+      nodes: data.nodes,
+      links: data.links
+    }
+    console.log(`Loaded ${data.node_count} nodes and ${data.link_count} links from KuzuDB`)
+    
+    // Reinitialize graph with real data
+    if (window.__Graph)
+    {
+      window.__Graph.graphData(placeholderGraph)
+    }
+    renderList()
+  }
+  catch (error)
+  {
+    console.error('Failed to load graph data:', error)
+    // Fallback to sample data if needed
+    placeholderGraph = {
+      nodes: [
+        { id: 'p1', type: 'problem', label: 'Sample Problem', karma: 5, views: 100 },
+        { id: 's1', type: 'solution', label: 'Sample Solution', reuseScore: 0.8, upvotes: 10 },
+        { id: 'm1', type: 'model', label: 'Sample Model', size: 'Large', provider: 'Test' }
+      ],
+      links: [
+        { source: 'p1', target: 's1', type: 'solves', strength: 1.0 }
+      ]
+    }
+    if (window.__Graph)
+    {
+      window.__Graph.graphData(placeholderGraph)
+    }
+    renderList()
+  }
 }
 
 const state = {
@@ -83,12 +102,24 @@ function nodeColor(node)
   {
     return '#34d399'
   }
-  return '#60a5fa'
+  if (node.type === 'model')
+  {
+    return '#60a5fa'
+  }
+  if (node.type === 'concept')
+  {
+    return '#a78bfa'
+  }
+  if (node.type === 'method')
+  {
+    return '#fb7185'
+  }
+  return '#9ca3af'
 }
 
 function linkColor(link)
 {
-  if (link.type === 'similarity')
+  if (link.type === 'similarity' || link.type === 'similar_to')
   {
     return 'rgba(122,162,255,0.8)'
   }
@@ -96,9 +127,13 @@ function linkColor(link)
   {
     return 'rgba(52,211,153,0.9)'
   }
-  if (link.type === 'produced_by')
+  if (link.type === 'produced_by' || link.type === 'can_solve')
   {
     return 'rgba(96,165,250,0.9)'
+  }
+  if (link.type === 'about' || link.type === 'uses' || link.type === 'references')
+  {
+    return 'rgba(167,139,250,0.7)'
   }
   return 'rgba(234,179,8,0.9)'
 }
@@ -109,7 +144,14 @@ function initGraph()
   const Graph = ForceGraph3D()(elem)
     .graphData(placeholderGraph)
     .nodeAutoColorBy('type')
-    .nodeVal(node => node.type === 'model' ? 9 : node.type === 'solution' ? 7 : 6)
+    .nodeVal(node => {
+      if (node.type === 'model') return 12
+      if (node.type === 'solution') return 8  
+      if (node.type === 'problem') return 10
+      if (node.type === 'concept') return 6
+      if (node.type === 'method') return 7
+      return 5
+    })
     .nodeColor(node => nodeColor(node))
     .nodeOpacity(0.95)
     .nodeThreeObjectExtend(true)
@@ -413,7 +455,6 @@ function itemMatchesFilters(item)
 
   if (domain && (item.domain || '') !== domain)
   {
-    // For solutions, domain may be inferred from linked problem; leave simple for now
     if (item.type !== 'solution')
     {
       return false
@@ -444,7 +485,6 @@ function itemMatchesFilters(item)
 
   if (item.type === 'problem')
   {
-    // problem matches if any linked solution is produced by selected model
     const solves = placeholderGraph.links.filter(l => l.type === 'solves' && (l.source === item.id || l.target === item.id))
     return solves.some(s =>
     {
@@ -631,7 +671,7 @@ function initDetailsPanel()
   document.getElementById('closeDetails').addEventListener('click', closeDetails)
 }
 
-function init()
+async function init()
 {
   initGraph()
   initHeader()
@@ -639,6 +679,9 @@ function init()
   initList()
   initRetrieveBar()
   initDetailsPanel()
+  
+  // Load real graph data from KuzuDB
+  await loadGraphData()
 }
 
 window.addEventListener('DOMContentLoaded', init) 
