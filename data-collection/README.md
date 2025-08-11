@@ -1,9 +1,13 @@
+# Why is this here?
+This folder contains attempts at using standalone models at solving open-source 
+issues. The point is to demonstrate how individual model fails catastrophically 
+at solving issues without a shared knowledge base.
+
 # KG representation: 
 ```
 Model → produced → Conversation → about → Issue
                            └─ has_turn → Turn(0) →next→ Turn(1) → ...
 ```
-And each Turn carries the exact text plus metadata (mode=chat/text, pipeline tag, timestamp).
 
 # Used model 
 qwen2-0.5b. 
