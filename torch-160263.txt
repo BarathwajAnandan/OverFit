@@ -1,0 +1,21 @@
+Issue: https://github.com/pytorch/pytorch/issues/160263
+Title: Graph partition + Fake Dependency from view op\n\nBody (truncated):
+Repro: `PYTORCH_TEST_WITH_INDUCTOR=1 python test/test_torch.py 
+TestTorchDeviceTypeCUDA.test_addcmul_use_cpu_scalar_True_cuda_complex64` with 
+mode=reduce-overhead and graph partition on. 
+To repro, we should also turn off `maybe_reorder_for_minimizing_partition` and 
+`reorder_for_partition_with_simple_dependency` which reorders to only 1 graph partition.\n
+\n
+Error:\n
+`UnboundLocalError: local variable 'buf3' referenced before assignment`\n\nAnalysis:\nIn partition_0, `buf3` is viewed as `buf4`, which is viewed as `buf5`, and finally return `buf5` as an output. 
+Due to fake dependency from `buf5` to `buf3`, `buf3` is not deallocated in partition_0. 
+Since `buf3` is not directly used in partition_1, partition_1 also does not take it as an input.\n\nLater, when `buf5` gets deallocated, `buf3` is not used anymore and is also deallocated immediately. 
+HOWEVER, `buf3` is not an input to partition_1, which leads to the error.\n
+\n
+See the following code in [code diff](https://www.internalfb.com/intern/diffing/?paste_number=1899085426)\n
+```\n
+        triton_poi_fused_add_0.run(buf5, buf17, buf18, 8, stream=stream0)\n
+                del buf15\n        del buf16\n        del buf17\n        del buf3\n        del buf4\n        del buf5\n```\n\ncc @mcarilli @ezyang @eellison @penguinwu @chauhang\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\n
+                
+Keep it concise and actionable.\n",
+        

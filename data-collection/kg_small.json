@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-08-11T00:10:55.571686+00:00",
+  "generated_at": "2025-08-11T00:56:41.641324+00:00",
   "schema": {
     "node_types": [
       "Model",
@@ -37,6 +37,275 @@
       }
     },
     {
+      "id": "issue::pytorch/pytorch#160289",
+      "label": "pytorch/pytorch#160289",
+      "type": "Issue",
+      "props": {
+        "title": "Symmetric memory backend bug: OOM with default, errors with CUDA/NCCL, nvshmem works",
+        "url": "https://github.com/pytorch/pytorch/issues/160289",
+        "state": "open",
+        "type": "bug",
+        "created_at": "2025-08-11T00:18:14Z",
+        "updated_at": "2025-08-11T00:18:14Z",
+        "labels": []
+      }
+    },
+    {
+      "id": "solution::pytorch/pytorch#160289",
+      "label": "Solution for pytorch/pytorch#160289",
+      "type": "Solution",
+      "props": {
+        "text": "Solution likely in linked PR/commit/comments; needs manual curation."
+      }
+    },
+    {
+      "id": "conv::qwen2-0.5b::pytorch/pytorch#160289",
+      "label": "Conversation qwen2-0.5b #160289",
+      "type": "Conversation",
+      "props": {
+        "model": "qwen2-0.5b",
+        "family": "Qwen2",
+        "size": "0.5B",
+        "kind": "diagnostic"
+      }
+    },
+    {
+      "id": "conv::qwen2-0.5b::pytorch/pytorch#160289::t00",
+      "label": "system t0",
+      "type": "Turn",
+      "props": {
+        "role": "system",
+        "content": "You are a concise, accurate PyTorch triage assistant.",
+        "ts": "2025-08-11T00:52:33.229703+00:00"
+      }
+    },
+    {
+      "id": "conv::qwen2-0.5b::pytorch/pytorch#160289::t01",
+      "label": "user t1",
+      "type": "Turn",
+      "props": {
+        "role": "user",
+        "content": "Issue: https://github.com/pytorch/pytorch/issues/160289\nTitle: Symmetric memory backend bug: OOM with default, errors with CUDA/NCCL, nvshmem works\n\nBody (truncated):\n### 🐛 Describe the bug\n\nWhen running the following code without setting the backend to nvshmem (i.e., using the default backend for symmetric memory), an out of memory error occurs. However, if I explicitly set the backend to nvshmem, the code runs without issue. \n\nAdditionally, I noticed the backend options also include CUDA and NCCL. When selecting CUDA as the backend, it immediately reports an error indicating that this backend does not exist. When using NCCL, a signal 11 (segmentation fault) occurs. I am not sure if these backends are still under development or not yet fully implemented.\n\n**Sample code to reproduce:**\n```python\n# Symmetric memory code sample\nimport torch\nimport torch.distributed as dist\nimport torch.distributed._symmetric_memory as symm_mem\nimport triton\nfrom triton.tools.tensor_descriptor import TensorDescriptor\nimport triton.language as tl\n\n@triton.jit\ndef get_tid():\n    return tl.inline_asm_elementwise(\n        \"\"\"\n        mov.u32 $0, %tid.x;\n        mov.u32 $1, %tid.y;\n        mov.u32 $2, %tid.z;\n        \"\"\",\n        \"=r,=r,=r\",\n        [],\n        dtype=(tl.uint32, tl.uint32, tl.uint32),\n        is_pure=True,\n        pack=1,\n    )\n\n\n@triton.jit\ndef get_ntid():\n    return tl.inline_asm_elementwise(\n        \"\"\"\n        mov.u32 $0, %ntid.x;\n        mov.u32 $1, %ntid.y;\n        mov.u32 $2, %ntid.z;\n        \"\"\",\n        \"=r,=r,=r\",\n        [],\n        dtype=(tl.uint32, tl.uint32, tl.uint32),\n        is_pure=True,\n        pack=1,\n    )\n\n\n@triton.jit\ndef get_flat_tid():\n    tid_x, tid_y, tid_z = get_tid()\n    ntid_x, ntid_y, _ = get_ntid()\n    return tid_z * ntid_y * ntid_x + tid_y * ntid_x + tid_x\n\n@triton.jit\ndef wait_signal(addr, flat_tid):\n    if flat_tid == 0:\n        tl.inline_asm_elementwise(\n            \"\"\"\n            {\n                .reg .pred  %p<1>;\n\n                wait_block:\n                    ld.global.relaxed.gpu.u32 $0, [$1];\n                    setp.eq.u32 %p0, $0, 1;\n                    @!%p0 bra wait_block;\n            }\n            \"\"\",\n            \"=r, l\",\n            [addr],\n            dtype=tl.int32,\n            is_pure=False,\n            pack=1,\n        )\n\n    tl.inline_asm_elementwise(\n        \"bar.sync 0;\", \"=r\", [], dtype=tl.int32, is_pure=False, pack=1\n    )\n\ndef _matmul_launch_metadata(grid, kernel, args):\n    ret = {}\n    M, N, K = args[\"M\"], args[\"N\"], args[\"K\"]\n    ret[\"name\"] = f\"{kernel.name} [M={M}, N={N}, K={K}]\"\n    ret[\"flops8\"] = 2.0 * M * N * K\n    if \"c_ptr\" in args:\n        bytes_per_elem = args[\"c_ptr\"].element_size()\n    else:\n        bytes_per_elem = 1 if args[\"FP8_OUTPUT\"] else 2\n    ret[\"bytes\"] = bytes_per_elem * (M * K + N * K)\n    return ret\n\n@triton.jit(launch_metadata=_matmul_launch_metadata)\ndef matmul_kernel_tma_persistent(\n    a_shard_desc_ptr,\n    a_desc_ptr,\n    b_desc_ptr,\n    c_desc_ptr,\n    progress_ptr,\n    M,\n    N,\n    K,\n    BLOCK_SIZE_M: tl.constexpr,\n    BLOCK_SIZE_N: tl.constexpr,\n    BLOCK_SIZE_K: tl.constexpr,\n    GROUP_SIZE_M: tl.constexpr,\n    COMM_BLO\n\nTASK:\nProvide:\n1) Likely root cause (usage vs library bug vs env/build) with justification.\n2) Minimal repro steps or code.\n3) Proposed fix/workaround (code/config).\n4) Relevant PyTorch docs/files (best effort).\nKeep it concise and actionable.\n",
+        "ts": "2025-08-11T00:52:33.229774+00:00"
+      }
+    },
+    {
+      "id": "conv::qwen2-0.5b::pytorch/pytorch#160289::t02",
+      "label": "assistant t2",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] StopIteration: ",
+        "ts": "2025-08-11T00:52:34.629292+00:00",
+        "mode": "text",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "conv::qwen2-0.5b::pytorch/pytorch#160289::t03",
+      "label": "assistant t3",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] StopIteration: ",
+        "ts": "2025-08-11T00:52:36.234191+00:00",
+        "mode": "text",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "conv::qwen2-0.5b::pytorch/pytorch#160289::t04",
+      "label": "assistant t4",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] empty/aborted response after retries",
+        "ts": "2025-08-11T00:52:38.635472+00:00",
+        "mode": "failed",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "label": "QnA qwen2-0.5b q1",
+      "type": "Conversation",
+      "props": {
+        "model": "qwen2-0.5b",
+        "family": "Qwen2",
+        "size": "0.5B",
+        "kind": "qna",
+        "q_index": 1
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t00",
+      "label": "system t0",
+      "type": "Turn",
+      "props": {
+        "role": "system",
+        "content": "You are a concise, accurate PyTorch triage assistant.",
+        "ts": "2025-08-11T00:52:45.290317+00:00"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t01",
+      "label": "user t1",
+      "type": "Turn",
+      "props": {
+        "role": "user",
+        "content": "(Context: https://github.com/pytorch/pytorch/issues/160289)\n[GEN ERROR] empty/aborted response after retries",
+        "ts": "2025-08-11T00:52:45.290365+00:00"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t02",
+      "label": "assistant t2",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] StopIteration: ",
+        "ts": "2025-08-11T00:52:45.290434+00:00",
+        "mode": "text",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t03",
+      "label": "assistant t3",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] StopIteration: ",
+        "ts": "2025-08-11T00:52:46.895299+00:00",
+        "mode": "text",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t04",
+      "label": "assistant t4",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] empty/aborted response after retries",
+        "ts": "2025-08-11T00:52:49.300378+00:00",
+        "mode": "failed",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t05",
+      "label": "user t5",
+      "type": "Turn",
+      "props": {
+        "role": "user",
+        "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
+        "ts": "2025-08-11T00:52:49.300414+00:00"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t06",
+      "label": "assistant t6",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] StopIteration: ",
+        "ts": "2025-08-11T00:52:49.300456+00:00",
+        "mode": "text",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t07",
+      "label": "assistant t7",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] StopIteration: ",
+        "ts": "2025-08-11T00:52:50.905737+00:00",
+        "mode": "text",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t08",
+      "label": "assistant t8",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] empty/aborted response after retries",
+        "ts": "2025-08-11T00:52:53.469523+00:00",
+        "mode": "failed",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t09",
+      "label": "user t9",
+      "type": "Turn",
+      "props": {
+        "role": "user",
+        "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
+        "ts": "2025-08-11T00:52:53.469610+00:00"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t10",
+      "label": "assistant t10",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] StopIteration: ",
+        "ts": "2025-08-11T00:52:53.469817+00:00",
+        "mode": "text",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t11",
+      "label": "assistant t11",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] StopIteration: ",
+        "ts": "2025-08-11T00:52:55.071825+00:00",
+        "mode": "text",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t12",
+      "label": "assistant t12",
+      "type": "Turn",
+      "props": {
+        "role": "assistant",
+        "content": "[MODEL ERROR] empty/aborted response after retries",
+        "ts": "2025-08-11T00:52:57.474869+00:00",
+        "mode": "failed",
+        "tag": "text-generation"
+      }
+    },
+    {
+      "id": "qa::qwen2-0.5b::pytorch/pytorch#160289::q01::Q",
+      "label": "Q1",
+      "type": "Question",
+      "props": {
+        "text": "[GEN ERROR] empty/aborted response after retries",
+        "gen_model": "bigcode/starcoder2-3b"
+      }
+    },
+    {
+      "id": "qa::qwen2-0.5b::pytorch/pytorch#160289::q01::A",
+      "label": "A1 (qwen2-0.5b)",
+      "type": "Answer",
+      "props": {
+        "text": "[MODEL ERROR] empty/aborted response after retries",
+        "model": "qwen2-0.5b",
+        "family": "Qwen2",
+        "size": "0.5B"
+      }
+    },
+    {
       "id": "issue::pytorch/pytorch#160285",
       "label": "pytorch/pytorch#160285",
       "type": "Issue",
@@ -68,7 +337,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:06:34.674600+00:00"
+        "ts": "2025-08-11T00:52:59.746389+00:00"
       }
     },
     {
@@ -78,7 +347,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160285\nTitle: Wrong-size gradients in Expert Parallel MoE\n\nBody (truncated):\n### 🐛 Describe the bug\n\n### Repro\n\n[test_moe_gradients.txt](https://github.com/user-attachments/files/21707913/test_moe_gradients.txt)\n[torch_moe.txt](https://github.com/user-attachments/files/21707912/torch_moe.txt)\n\nInstall torchtitan on your system (`pip install torchtitan`). Rename the file extensions to .py. Run with `OMP_NUM_THREADS=1 torchrun --nproc_per_node=2 test_moe_gradients.py`.\n\nThe observed behavior is that the gradients are doubled with EP=2.\n\nUse of TorchGroupedExperts in a non-testcase environment shows that loss curves are equivalent even with the doubled gradients; each gradient is exactly 2x in size.\n\n### Observables\n\nThis testcase attempts to replicate torchtitan's EP+MoE layer by copying code directly into `torch_moe.py`. Possibilities:\n1. torch has a bug (perhaps in the distributed parts)\n2. torchtitan has a bug. I don't see it though.\n3. my replication of torchtitan has a bug.\n\n```\nkevin@kevin-h100-0:/mnt/clusterstorage/workspace/kevin$ OMP_NUM_THREADS=1 torchrun --nproc_per_node=2 test_moe_gradients.py \nTesting with 2 processes\n\n==================================================\nTEST 1: Without Expert Parallel Sharding\n==================================================\n1 experts.w1 torch.Size([2, 8, 8]) <class 'torch.distributed.tensor.DTensor'> DeviceMesh((dp=2), device: 'cuda', stride: (1,))\n1 experts.w2 torch.Size([2, 8, 8]) <class 'torch.distributed.tensor.DTensor'> DeviceMesh((dp=2), device: 'cuda', stride: (1,))\n1 experts.w3 torch.Size([2, 8, 8]) <class 'torch.distributed.tensor.DTensor'> DeviceMesh((dp=2), device: 'cuda', stride: (1,))\n0 experts.w1 torch.Size([2, 8, 8]) <class 'torch.distributed.tensor.DTensor'> DeviceMesh((dp=2), device: 'cuda', stride: (1,))\n0 experts.w2 torch.Size([2, 8, 8]) <class 'torch.distributed.tensor.DTensor'> DeviceMesh((dp=2), device: 'cuda', stride: (1,))\n0 experts.w3 torch.Size([2, 8, 8]) <class 'torch.distributed.tensor.DTensor'> DeviceMesh((dp=2), device: 'cuda', stride: (1,))\n\nWITHOUT EP Gradient Analysis:\n  experts.w1: grad_norm = 0.066087, shape = torch.Size([2, 8, 8]), local shape = torch.Size([1, 8, 8]) param.grad.to_local()[0, 0, 0]=tensor(0.0013, device='cuda:0')\n  experts.w2: grad_norm = 0.554278, shape = torch.Size([2, 8, 8]), local shape = torch.Size([1, 8, 8]) param.grad.to_local()[0, 0, 0]=tensor(0.0553, device='cuda:0')\n  experts.w3: grad_norm = 0.122219, shape = torch.Size([2, 8, 8]), local shape = torch.Size([1, 8, 8]) param.grad.to_local()[0, 0, 0]=tensor(0.0024, device='cuda:0')\n  Total gradient norm: 0.571427\n\n==================================================\nTEST 2: With Expert Parallel Sharding\n==================================================\nApplying ExpertParallel sharding with EP size: 2Applying ExpertParallel sharding with EP size: 2\n\n0 experts.w1 torch.Size([2, 8, 8]) <class 'torch.distributed.tensor.DTensor'> DeviceMesh((notep=1, ep=2), device: 'cuda', stride: (2, 1))\n0 experts.w2 torch.Size([2, 8, 8]) <class 'torch.distributed.tensor.DTensor'> DeviceMe\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:06:34.674665+00:00"
+        "ts": "2025-08-11T00:52:59.746415+00:00"
       }
     },
     {
@@ -88,7 +357,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:06:38.141031+00:00",
+        "ts": "2025-08-11T00:52:59.746467+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -100,7 +369,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:06:39.746368+00:00",
+        "ts": "2025-08-11T00:53:01.351750+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -112,7 +381,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:06:42.149439+00:00",
+        "ts": "2025-08-11T00:53:03.754274+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -136,7 +405,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:06:49.842380+00:00"
+        "ts": "2025-08-11T00:53:09.768242+00:00"
       }
     },
     {
@@ -146,7 +415,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160285)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:06:49.842437+00:00"
+        "ts": "2025-08-11T00:53:09.768312+00:00"
       }
     },
     {
@@ -156,7 +425,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:06:49.842634+00:00",
+        "ts": "2025-08-11T00:53:09.768461+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -168,7 +437,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:06:51.444661+00:00",
+        "ts": "2025-08-11T00:53:11.373138+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -180,7 +449,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:06:53.850911+00:00",
+        "ts": "2025-08-11T00:53:13.774825+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -192,7 +461,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:06:53.851182+00:00"
+        "ts": "2025-08-11T00:53:13.774882+00:00"
       }
     },
     {
@@ -202,7 +471,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:06:53.851437+00:00",
+        "ts": "2025-08-11T00:53:13.774994+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -214,7 +483,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:06:55.456303+00:00",
+        "ts": "2025-08-11T00:53:15.380167+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -226,7 +495,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:06:57.860386+00:00",
+        "ts": "2025-08-11T00:53:17.788949+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -238,7 +507,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:06:57.860468+00:00"
+        "ts": "2025-08-11T00:53:17.789027+00:00"
       }
     },
     {
@@ -248,7 +517,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:06:57.860677+00:00",
+        "ts": "2025-08-11T00:53:17.789684+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -260,7 +529,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:06:59.461021+00:00",
+        "ts": "2025-08-11T00:53:19.395104+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -272,7 +541,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:01.865885+00:00",
+        "ts": "2025-08-11T00:53:21.798015+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -334,7 +603,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:07:05.488861+00:00"
+        "ts": "2025-08-11T00:53:24.347798+00:00"
       }
     },
     {
@@ -344,7 +613,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160281\nTitle: Improve CUDAGraph Tree heuristics on starting new generation\n\nBody (truncated):\nRepro: \n```python\nimport torch\n\n\ndef f(x):\n    return x + 1\n\ndef g(x):\n    return x + 1\n\n\nf = torch.compile(f, mode=\"reduce-overhead\")\ng = torch.compile(g, mode=\"reduce-overhead\")\n\n\ng(f(torch.randn(2, device=\"cuda\")))\n```\n\nError:\n```\nTraceback (most recent call last):\n  File \"/data/users/boyuan/playground/example.py\", line 15, in <module>\n    g(f(torch.randn(2, device=\"cuda\")))\n  File \"/data/users/boyuan/pytorch/torch/_dynamo/eval_frame.py\", line 804, in compile_wrapper\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/playground/example.py\", line 7, in g\n    def g(x):\n  File \"/data/users/boyuan/pytorch/torch/_dynamo/eval_frame.py\", line 1005, in _fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_functorch/aot_autograd.py\", line 1129, in forward\n    return compiled_fn(full_args)\n           ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_functorch/_aot_autograd/runtime_wrappers.py\", line 353, in runtime_wrapper\n    all_outs = call_func_at_runtime_with_args(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_functorch/_aot_autograd/utils.py\", line 129, in call_func_at_runtime_with_args\n    out = normalize_as_list(f(args))\n                            ^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_functorch/_aot_autograd/runtime_wrappers.py\", line 526, in wrapper\n    return compiled_fn(runtime_args)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_inductor/output_code.py\", line 588, in __call__\n    return self.current_callable(inputs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/torchinductor_boyuan/7r/c7rncd4yt7evtahixpc66jrvry6prnjvamjzqs6l3rbmwiba5jm2.py\", line 108, in call\n    (buf0,) = self.partitions[0](partition0_args)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_inductor/compile_fx.py\", line 1729, in run\n    return compiled_fn(new_inputs)  # type: ignore[arg-type]\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_inductor/cudagraph_trees.py\", line 404, in deferred_cudagraphify\n    fn, out = cudagraphify(model, inputs, new_static_input_idxs, *args, **kwargs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_inductor/cudagraph_trees.py\", line 463, in cudagraphify\n    return manager.add_function(\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_inductor/cudagraph_trees.py\", line 2316, in add_function\n    return fn, fn(inputs)\n               ^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_inductor/cudagraph_trees.py\", line 2012, in run\n    out = self._run(new_inputs, function_id)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/data/users/boyuan/pytorch/torch/_inductor/cudagraph_trees.py\", line 2116, in _run\n    return self.run_eager(new_inputs, function_id)\n           ^^^^^^^\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:07:05.488917+00:00"
+        "ts": "2025-08-11T00:53:24.347817+00:00"
       }
     },
     {
@@ -354,7 +623,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:05.489045+00:00",
+        "ts": "2025-08-11T00:53:24.347859+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -366,7 +635,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:07.094311+00:00",
+        "ts": "2025-08-11T00:53:25.953120+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -378,7 +647,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:09.499443+00:00",
+        "ts": "2025-08-11T00:53:28.358156+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -402,7 +671,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:07:15.513451+00:00"
+        "ts": "2025-08-11T00:53:34.369759+00:00"
       }
     },
     {
@@ -412,7 +681,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160281)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:15.513506+00:00"
+        "ts": "2025-08-11T00:53:34.369825+00:00"
       }
     },
     {
@@ -422,7 +691,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:15.513627+00:00",
+        "ts": "2025-08-11T00:53:34.369977+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -434,7 +703,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:17.117440+00:00",
+        "ts": "2025-08-11T00:53:35.973188+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -446,7 +715,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:19.522510+00:00",
+        "ts": "2025-08-11T00:53:38.378324+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -458,7 +727,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:07:19.522608+00:00"
+        "ts": "2025-08-11T00:53:38.378428+00:00"
       }
     },
     {
@@ -468,7 +737,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:19.522772+00:00",
+        "ts": "2025-08-11T00:53:38.378608+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -480,7 +749,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:21.123384+00:00",
+        "ts": "2025-08-11T00:53:39.980194+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -492,7 +761,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:23.526217+00:00",
+        "ts": "2025-08-11T00:53:42.383579+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -504,7 +773,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:07:23.526334+00:00"
+        "ts": "2025-08-11T00:53:42.383666+00:00"
       }
     },
     {
@@ -514,7 +783,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:23.526541+00:00",
+        "ts": "2025-08-11T00:53:42.383889+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -526,7 +795,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:25.131189+00:00",
+        "ts": "2025-08-11T00:53:43.989225+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -538,7 +807,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:27.532069+00:00",
+        "ts": "2025-08-11T00:53:46.390571+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -608,7 +877,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:07:30.691049+00:00"
+        "ts": "2025-08-11T00:53:49.817505+00:00"
       }
     },
     {
@@ -618,7 +887,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160273\nTitle: [Documentation Clarity] torch.min/torch.max gradient behavior\n\nBody (truncated):\n### 📚 The doc issue\n\n`torch.min` and `torch.max` do not mention the gradient behavior of theirs, yet the gradient behavior can be found in the documentation of `torch.amin`, `torch.amax`:\n> Both max/min and amax/amin evenly distribute gradients between equal values when there are multiple input elements with the same minimum or maximum value.\n\nWhich seems, **unfortunately**, to be wrong, or at least, partially wrong, see the following example:\n\n```python\n>>> # torch.min -> reduce over all dimensions\n>>> a = torch.ones([5]).cuda()\n>>> a.requires_grad=True\n>>> min_val = torch.min(a)\n>>> min_val.backward()\n>>> a.grad\ntensor([0.2000, 0.2000, 0.2000, 0.2000, 0.2000], device='cuda:0')\n...\n>>> # torch.min(input, dim=...) -> reduce over specified dimension\n>>> a = torch.ones([5]).cuda()\n>>> a.requires_grad=True\n>>> min_val = torch.min(a, dim=0)\n>>> min_val.values.backward()\n>>> a.grad\ntensor([1., 0., 0., 0., 0.], device='cuda:0')\n```\n\nIt is obvious that the former one performs a `amin`-like BP while the latter one is more like indexing. My torch version is `'2.7.1+cu126'`, and I think it is the same with CPU devices.\n\nCan you make it clearer? (see Suggest a potential alternative/fix) \n\n### Suggest a potential alternative/fix\n\nWe know that `torch.min` (and `max`) has three sets of behaviors:\n- reduce over all dimensions (single tensor input), its gradient behavior is the same as `amin`. (Evenly distribute).\n- reduce over one specified axis, its gradient behavior is like using an `argmin` and a index select or something. (Propagate only to the indexed element)\n- perform elementwise min/max (nothing to say here).\n\nSo, add the corresponding explanation for the gradient behavior, if I am correct about this. I've wasted a whole day on this issue, since either your documentation is way too simple for me to over-trust it or I am foolish on experimenting with PyTorch, sorry if my tone is harsh, wish PyTorch all the best, thanks.\n\ncc @svekars @sekyondaMeta @AlannaBurke @albanD\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:07:30.691065+00:00"
+        "ts": "2025-08-11T00:53:49.817546+00:00"
       }
     },
     {
@@ -628,7 +897,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:30.691093+00:00",
+        "ts": "2025-08-11T00:53:49.817626+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -640,7 +909,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:32.295488+00:00",
+        "ts": "2025-08-11T00:53:51.420063+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -652,7 +921,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:34.697180+00:00",
+        "ts": "2025-08-11T00:53:53.823409+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -676,7 +945,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:07:40.710053+00:00"
+        "ts": "2025-08-11T00:53:59.835466+00:00"
       }
     },
     {
@@ -686,7 +955,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160273)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:40.710123+00:00"
+        "ts": "2025-08-11T00:53:59.835484+00:00"
       }
     },
     {
@@ -696,7 +965,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:40.710271+00:00",
+        "ts": "2025-08-11T00:53:59.835514+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -708,7 +977,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:42.312677+00:00",
+        "ts": "2025-08-11T00:54:01.440769+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -720,7 +989,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:44.717808+00:00",
+        "ts": "2025-08-11T00:54:03.843805+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -732,7 +1001,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:07:44.717914+00:00"
+        "ts": "2025-08-11T00:54:03.843914+00:00"
       }
     },
     {
@@ -742,7 +1011,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:44.718133+00:00",
+        "ts": "2025-08-11T00:54:03.844113+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -754,7 +1023,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:46.323420+00:00",
+        "ts": "2025-08-11T00:54:05.449408+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -766,7 +1035,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:48.726811+00:00",
+        "ts": "2025-08-11T00:54:07.854595+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -778,7 +1047,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:07:48.726888+00:00"
+        "ts": "2025-08-11T00:54:07.854684+00:00"
       }
     },
     {
@@ -788,7 +1057,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:48.727044+00:00",
+        "ts": "2025-08-11T00:54:07.854882+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -800,7 +1069,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:50.332319+00:00",
+        "ts": "2025-08-11T00:54:09.460185+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -812,7 +1081,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:52.673868+00:00",
+        "ts": "2025-08-11T00:54:11.865354+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -871,7 +1140,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:07:55.157538+00:00"
+        "ts": "2025-08-11T00:54:14.377812+00:00"
       }
     },
     {
@@ -881,7 +1150,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160272\nTitle: Add Green Context Support for fsdp2\n\nBody (truncated):\n### 🚀 The feature, motivation and pitch\n\nPyTorch relies on CUDA streams and events to naively overlap computation and communication. However, these overlaps can interfere with one another - causing throughput degradation and unstable performance. We propose introducing CUDA Green Context[1] in fsdp2 to provide contexts that isolate SM resources for computation and communication.\nFlashInfer[2] has already integrated this experimental feature into their framework using API provided by cuda-python.\nI think a naive implentation will be:\nwe split the SM into two contexts, computation and communcation(only one context for  allgather/reduce_scatter/allreduce)\nwe create streams from context, 1 stream for overlapped compute, for commucation, we just replace normal cuda streams with streams created from commucation green context\nwe can dynamically change the current_stream in `pre_forward` and `forward` hooks, since we want to use green context stream for overlapped computation and default stream for non-overlapped computation\n \n\n[1] https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GREEN__CONTEXTS.html\n[2] https://github.com/flashinfer-ai/flashinfer/pull/1163\n\n### Alternatives\n\n_No response_\n\n### Additional context\n\n_No response_\n\ncc @H-Huang @awgu @wanchaol @fegin @fduwjj @wz337 @wconstab @d4l3k @pragupta\n\nTASK:\nTreat as a feature request/RFC. Provide:\n1) Scope & rationale.\n2) Minimal API or design sketch.\n3) Back-compat considerations.\n4) Implementation plan (files/modules) + test strategy.\n5) Short-term workaround if not implemented.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:07:55.157587+00:00"
+        "ts": "2025-08-11T00:54:14.377833+00:00"
       }
     },
     {
@@ -891,7 +1160,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:55.157698+00:00",
+        "ts": "2025-08-11T00:54:14.377882+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -903,7 +1172,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:07:56.762866+00:00",
+        "ts": "2025-08-11T00:54:15.981703+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -915,7 +1184,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:07:59.163493+00:00",
+        "ts": "2025-08-11T00:54:18.384623+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -939,7 +1208,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:08:05.175628+00:00"
+        "ts": "2025-08-11T00:54:24.400276+00:00"
       }
     },
     {
@@ -949,7 +1218,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160272)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:05.175696+00:00"
+        "ts": "2025-08-11T00:54:24.400343+00:00"
       }
     },
     {
@@ -959,7 +1228,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:05.175842+00:00",
+        "ts": "2025-08-11T00:54:24.400490+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -971,7 +1240,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:06.781080+00:00",
+        "ts": "2025-08-11T00:54:26.001002+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -983,7 +1252,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:09.184118+00:00",
+        "ts": "2025-08-11T00:54:28.406165+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -995,7 +1264,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:08:09.184221+00:00"
+        "ts": "2025-08-11T00:54:28.406267+00:00"
       }
     },
     {
@@ -1005,7 +1274,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:09.184412+00:00",
+        "ts": "2025-08-11T00:54:28.406453+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1017,7 +1286,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:10.786533+00:00",
+        "ts": "2025-08-11T00:54:30.010599+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1029,7 +1298,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:13.189427+00:00",
+        "ts": "2025-08-11T00:54:32.415528+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1041,7 +1310,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:08:13.189513+00:00"
+        "ts": "2025-08-11T00:54:32.415614+00:00"
       }
     },
     {
@@ -1051,7 +1320,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:13.189721+00:00",
+        "ts": "2025-08-11T00:54:32.415808+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1063,7 +1332,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:14.791993+00:00",
+        "ts": "2025-08-11T00:54:34.021097+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1075,7 +1344,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:17.194629+00:00",
+        "ts": "2025-08-11T00:54:36.425373+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1134,7 +1403,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:08:21.135273+00:00"
+        "ts": "2025-08-11T00:54:38.747045+00:00"
       }
     },
     {
@@ -1144,7 +1413,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160271\nTitle: Error when using torch.compile with dynamic=True: tensor 'guidance' stride mismatch at index 0\n\nBody (truncated):\n### 🐛 Describe the bug\n\nHi, I'm trying to generate a different number of images without triggering recompilation, using dynamic=True.\n\nHere is the reproducible code:\n\n with torch._dynamo.config.patch(error_on_recompile=True):\n        torch.cuda.reset_peak_memory_stats()\n        pipe = DiffusionPipeline.from_pretrained(\n            \"black-forest-labs/FLUX.1-dev\",\n            torch_dtype=torch.bfloat16,\n        ).to(\"cuda\")\n\n        pipe.transformer = torch.compile(pipe.transformer, dynamic=True)\n\n        # warmup with 1 image\n        image = pipe(prompt=\"A cat holding a sign that says hello world\",\n                     width=1024,\n                     height=1024,\n                     num_inference_steps=10,\n                     num_images_per_prompt=1,\n                     ).images[0]\n\n        # inference with 2 images\n        image = pipe(prompt=\"A cat holding a sign that says hello world\",\n                     width=1024,\n                     height=1024,\n                     num_inference_steps=10,\n                     num_images_per_prompt=2,\n                     ).images[0]\n\n\n\n\n### Error logs\n\ntorch._dynamo.exc.RecompileError: Recompiling function forward in /root/PycharmProjects/project/.venv/lib/python3.10/site-packages/diffusers/models/transformers/transformer_flux.py:389\n    triggered by the following guard failure(s):\n    - 0/0: tensor 'guidance' size mismatch at index 0. expected 1, actual 2\n\n### Versions\n\n\n[pip3] nvidia-cublas-cu12==12.8.4.1\n[pip3] nvidia-cuda-cupti-cu12==12.8.90\n[pip3] nvidia-cuda-nvrtc-cu12==12.8.93\n[pip3] nvidia-cuda-runtime-cu12==12.8.90\n[pip3] nvidia-cudnn-cu12==9.10.2.21\n[pip3] nvidia-cufft-cu12==11.3.3.83\n[pip3] nvidia-curand-cu12==10.3.9.90\n[pip3] nvidia-cusolver-cu12==11.7.3.90\n[pip3] nvidia-cusparse-cu12==12.5.8.93\n[pip3] nvidia-cusparselt-cu12==0.7.1\n[pip3] nvidia-nccl-cu12==2.27.3\n[pip3] nvidia-nvjitlink-cu12==12.8.93\n[pip3] nvidia-nvtx-cu12==12.8.90\n[pip3] onnxruntime==1.20.1\n\n[pip3] torch==2.8.0\n[pip3] torchao==0.12.0\n[pip3] torchaudio==2.8.0\n[pip3] torchvision==0.23.0\n[pip3] triton==3.4.0\n\ncc @chauhang @penguinwu\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:08:21.135288+00:00"
+        "ts": "2025-08-11T00:54:38.747095+00:00"
       }
     },
     {
@@ -1154,7 +1423,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:21.135325+00:00",
+        "ts": "2025-08-11T00:54:38.747209+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1166,7 +1435,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:22.737561+00:00",
+        "ts": "2025-08-11T00:54:40.352366+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1178,7 +1447,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:25.142359+00:00",
+        "ts": "2025-08-11T00:54:42.756083+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1202,7 +1471,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:08:31.153929+00:00"
+        "ts": "2025-08-11T00:54:48.769539+00:00"
       }
     },
     {
@@ -1212,7 +1481,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160271)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:31.153988+00:00"
+        "ts": "2025-08-11T00:54:48.769591+00:00"
       }
     },
     {
@@ -1222,7 +1491,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:31.154124+00:00",
+        "ts": "2025-08-11T00:54:48.769705+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1234,7 +1503,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:32.756537+00:00",
+        "ts": "2025-08-11T00:54:50.373694+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1246,7 +1515,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:35.161020+00:00",
+        "ts": "2025-08-11T00:54:52.778058+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1258,7 +1527,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:08:35.161129+00:00"
+        "ts": "2025-08-11T00:54:52.778176+00:00"
       }
     },
     {
@@ -1268,7 +1537,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:35.161314+00:00",
+        "ts": "2025-08-11T00:54:52.778363+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1280,7 +1549,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:36.765330+00:00",
+        "ts": "2025-08-11T00:54:54.380249+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1292,7 +1561,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:39.170053+00:00",
+        "ts": "2025-08-11T00:54:56.785405+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1304,7 +1573,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:08:39.170123+00:00"
+        "ts": "2025-08-11T00:54:56.785492+00:00"
       }
     },
     {
@@ -1314,7 +1583,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:39.170268+00:00",
+        "ts": "2025-08-11T00:54:56.785696+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1326,7 +1595,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:40.774831+00:00",
+        "ts": "2025-08-11T00:54:58.390468+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1338,7 +1607,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:43.176799+00:00",
+        "ts": "2025-08-11T00:55:00.794358+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1407,7 +1676,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:08:50.046374+00:00"
+        "ts": "2025-08-11T00:55:03.643814+00:00"
       }
     },
     {
@@ -1417,7 +1686,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160269\nTitle: Questions about Volta Support\n\nBody (truncated):\n### 📚 The doc issue\n\nIn the release notes, I saw that support for the Volta architecture was dropped. However, I also found pull requests, such as [#157968](https://github.com/pytorch/pytorch/pull/157968), that were merged into the releases/2.8 branch and appear to add Volta support.\n\n<img width=\"1183\" height=\"275\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/ea9dd8bc-8f92-411a-9683-b80883625644\" />\n\ncc @svekars @sekyondaMeta @AlannaBurke\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:08:50.046388+00:00"
+        "ts": "2025-08-11T00:55:03.643864+00:00"
       }
     },
     {
@@ -1427,7 +1696,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:50.046416+00:00",
+        "ts": "2025-08-11T00:55:03.643971+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1439,7 +1708,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:08:51.647337+00:00",
+        "ts": "2025-08-11T00:55:05.246186+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1451,7 +1720,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:08:54.052404+00:00",
+        "ts": "2025-08-11T00:55:07.651303+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1475,7 +1744,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:09:00.061963+00:00"
+        "ts": "2025-08-11T00:55:13.659876+00:00"
       }
     },
     {
@@ -1485,7 +1754,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160269)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:00.062035+00:00"
+        "ts": "2025-08-11T00:55:13.659928+00:00"
       }
     },
     {
@@ -1495,7 +1764,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:00.065868+00:00",
+        "ts": "2025-08-11T00:55:13.660039+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1507,7 +1776,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:01.669536+00:00",
+        "ts": "2025-08-11T00:55:15.263546+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1519,7 +1788,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:04.074642+00:00",
+        "ts": "2025-08-11T00:55:17.667060+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1531,7 +1800,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:09:04.074749+00:00"
+        "ts": "2025-08-11T00:55:17.667185+00:00"
       }
     },
     {
@@ -1541,7 +1810,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:04.074944+00:00",
+        "ts": "2025-08-11T00:55:17.667368+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1553,7 +1822,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:05.677896+00:00",
+        "ts": "2025-08-11T00:55:19.269031+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1565,7 +1834,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:08.082212+00:00",
+        "ts": "2025-08-11T00:55:21.674216+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1577,7 +1846,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:09:08.082301+00:00"
+        "ts": "2025-08-11T00:55:21.674303+00:00"
       }
     },
     {
@@ -1587,7 +1856,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:08.082539+00:00",
+        "ts": "2025-08-11T00:55:21.674506+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1599,7 +1868,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:09.686376+00:00",
+        "ts": "2025-08-11T00:55:23.277396+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1611,7 +1880,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:12.089529+00:00",
+        "ts": "2025-08-11T00:55:25.682551+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1671,7 +1940,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:09:15.169335+00:00"
+        "ts": "2025-08-11T00:55:28.386965+00:00"
       }
     },
     {
@@ -1681,7 +1950,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160265\nTitle: XPU out of memory on Intel iGPUs although plenty of memory is available per error message.\n\nBody (truncated):\n### 🐛 Describe the bug\n\nFrom https://github.com/comfyanonymous/ComfyUI/issues/9128 and some other chatter in the ComfyUI discussions topic on Github, users of Intel iGPUs have been getting `torch.OutOfMemoryError` messages running more intensive workflows like video generation. But the messages don't make much sense.\n```\ntorch.OutOfMemoryError: XPU out of memory. Tried to allocate 9.57 GiB. GPU 0 has a total capacity of 58.06 GiB. Of the allocated memory 16.93 GiB is allocated by PyTorch, and 237.01 MiB is reserved by PyTorch but unallocated. Please use `empty_cache` to release all unoccupied cached memory.\n```\nSeems like there is plenty of VRAM accessible so it shouldn't be erroring out. Either the total capacity is not being reported correctly, outside allocations have taken up memory that is not being reported here, the limit is actually lower and/or something is blocking the iGPU from accessing more RAM. It's also not clear if this issue is restricted or related to a certain class or family of iGPUs. The users I've seen that reported these issues had Intel Core Ultra 9 185H or similar and they were using nightly builds and still getting the same errors.\nI haven't gotten to reproduce it on my LNL 288V but I have less memory than these people and I also don't have more than 16GB from what Pytorch reports and it is half of my 32GB total RAM. The issue I linked has an Intel Core Ultra 9 185H with 64GB of RAM but what is reported seems to be the full amount addressable which would be wrong? But even if you cut the 64GB of RAM down to 32GB if it is using the same scheme as LNL, the memory figure provided is around 25-26GB of VRAM, which is still lower than a theoretical 32GB limit. Not sure if it is a Pytorch or driver issue but wanted to report it here first in case.\n\n### Versions\n\n2.9.0.dev20250730+xpu and 2.9.0.dev20250808+xpu were from what I could gather.\n\ncc @gujinghui @EikanWang @fengyuan14 @guangyey\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:09:15.169345+00:00"
+        "ts": "2025-08-11T00:55:28.387014+00:00"
       }
     },
     {
@@ -1691,7 +1960,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:15.169371+00:00",
+        "ts": "2025-08-11T00:55:28.387129+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1703,7 +1972,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:16.774286+00:00",
+        "ts": "2025-08-11T00:55:29.991398+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1715,7 +1984,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:19.178169+00:00",
+        "ts": "2025-08-11T00:55:32.396550+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1739,7 +2008,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:09:25.190333+00:00"
+        "ts": "2025-08-11T00:55:38.408834+00:00"
       }
     },
     {
@@ -1749,7 +2018,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160265)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:25.190388+00:00"
+        "ts": "2025-08-11T00:55:38.408901+00:00"
       }
     },
     {
@@ -1759,7 +2028,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:25.190473+00:00",
+        "ts": "2025-08-11T00:55:38.409047+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1771,7 +2040,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:26.790818+00:00",
+        "ts": "2025-08-11T00:55:40.014328+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1783,7 +2052,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:29.194186+00:00",
+        "ts": "2025-08-11T00:55:42.419480+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1795,7 +2064,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:09:29.194207+00:00"
+        "ts": "2025-08-11T00:55:42.419582+00:00"
       }
     },
     {
@@ -1805,7 +2074,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:29.194242+00:00",
+        "ts": "2025-08-11T00:55:42.419773+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1817,7 +2086,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:30.799481+00:00",
+        "ts": "2025-08-11T00:55:44.023213+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1829,7 +2098,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:33.203856+00:00",
+        "ts": "2025-08-11T00:55:46.428073+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1841,7 +2110,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:09:33.203947+00:00"
+        "ts": "2025-08-11T00:55:46.428159+00:00"
       }
     },
     {
@@ -1851,7 +2120,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:33.204154+00:00",
+        "ts": "2025-08-11T00:55:46.428372+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1863,7 +2132,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:34.808540+00:00",
+        "ts": "2025-08-11T00:55:48.030612+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1875,7 +2144,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:37.212664+00:00",
+        "ts": "2025-08-11T00:55:50.433697+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -1936,7 +2205,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:09:39.744000+00:00"
+        "ts": "2025-08-11T00:55:52.701505+00:00"
       }
     },
     {
@@ -1946,7 +2215,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160263\nTitle: Graph partition + Fake Dependency from view op\n\nBody (truncated):\nRepro: `PYTORCH_TEST_WITH_INDUCTOR=1 python test/test_torch.py TestTorchDeviceTypeCUDA.test_addcmul_use_cpu_scalar_True_cuda_complex64` with mode=reduce-overhead and graph partition on. To repro, we should also turn off `maybe_reorder_for_minimizing_partition` and `reorder_for_partition_with_simple_dependency` which reorders to only 1 graph partition.\n\nError:\n`UnboundLocalError: local variable 'buf3' referenced before assignment`\n\nAnalysis:\nIn partition_0, `buf3` is viewed as `buf4`, which is viewed as `buf5`, and finally return `buf5` as an output. Due to fake dependency from `buf5` to `buf3`, `buf3` is not deallocated in partition_0. Since `buf3` is not directly used in partition_1, partition_1 also does not take it as an input.\n\nLater, when `buf5` gets deallocated, `buf3` is not used anymore and is also deallocated immediately. HOWEVER, `buf3` is not an input to partition_1, which leads to the error.\n\nSee the following code in [code diff](https://www.internalfb.com/intern/diffing/?paste_number=1899085426)\n```\n        triton_poi_fused_add_0.run(buf5, buf17, buf18, 8, stream=stream0)\n        del buf15\n        del buf16\n        del buf17\n        del buf3\n        del buf4\n        del buf5\n```\n\ncc @mcarilli @ezyang @eellison @penguinwu @chauhang\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:09:39.744058+00:00"
+        "ts": "2025-08-11T00:55:52.701558+00:00"
       }
     },
     {
@@ -1956,7 +2225,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:39.744177+00:00",
+        "ts": "2025-08-11T00:55:52.701664+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1968,7 +2237,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:41.349429+00:00",
+        "ts": "2025-08-11T00:55:54.306943+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -1980,7 +2249,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:43.750149+00:00",
+        "ts": "2025-08-11T00:55:56.708700+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -2004,7 +2273,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:09:49.761526+00:00"
+        "ts": "2025-08-11T00:56:02.720756+00:00"
       }
     },
     {
@@ -2014,7 +2283,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160263)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:49.761597+00:00"
+        "ts": "2025-08-11T00:56:02.720829+00:00"
       }
     },
     {
@@ -2024,7 +2293,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:49.761747+00:00",
+        "ts": "2025-08-11T00:56:02.720980+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2036,7 +2305,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:51.363690+00:00",
+        "ts": "2025-08-11T00:56:04.326265+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2048,7 +2317,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:53.768815+00:00",
+        "ts": "2025-08-11T00:56:06.731426+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -2060,7 +2329,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:09:53.768919+00:00"
+        "ts": "2025-08-11T00:56:06.731527+00:00"
       }
     },
     {
@@ -2070,7 +2339,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:53.769107+00:00",
+        "ts": "2025-08-11T00:56:06.731722+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2082,7 +2351,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:55.374271+00:00",
+        "ts": "2025-08-11T00:56:08.335696+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2094,7 +2363,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:09:57.779376+00:00",
+        "ts": "2025-08-11T00:56:10.736177+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -2106,7 +2375,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:09:57.779463+00:00"
+        "ts": "2025-08-11T00:56:10.736353+00:00"
       }
     },
     {
@@ -2116,7 +2385,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:57.779664+00:00",
+        "ts": "2025-08-11T00:56:10.736697+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2128,7 +2397,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:09:59.383243+00:00",
+        "ts": "2025-08-11T00:56:12.340434+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2140,7 +2409,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:01.784669+00:00",
+        "ts": "2025-08-11T00:56:14.744750+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -2210,7 +2479,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:10:06.950766+00:00"
+        "ts": "2025-08-11T00:56:17.601648+00:00"
       }
     },
     {
@@ -2220,7 +2489,7 @@
       "props": {
         "role": "user",
         "content": "Issue: https://github.com/pytorch/pytorch/issues/160261\nTitle: CPU: Pytorch >= 2.7.0 is broken\n\nBody (truncated):\n### 🐛 Describe the bug\n\nCPU platform appears to be broken in torch>=2.7.0\n\n```\ntorch_cpu_env) /tmp$ pip install -qqq torch==2.7.0 --index-url https://download.pytorch.org/whl/cpu\n(torch_cpu_env) /tmp$ pip show torch\nName: torch\nVersion: 2.7.0+cpu\nSummary: Tensors and Dynamic neural networks in Python with strong GPU acceleration\nHome-page: https://pytorch.org/\nAuthor: PyTorch Team\nAuthor-email: packages@pytorch.org\nLicense: BSD-3-Clause\nLocation: /torch_cpu_env/lib/python3.10/site-packages\nRequires: filelock, fsspec, jinja2, networkx, sympy, typing-extensions\nRequired-by:\n(torch_cpu_env) /tmp$ python -c \"import torch\"\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/torch_cpu_env/lib/python3.10/site-packages/torch/__init__.py\", line 2126, in <module>\n    from torch import _VF as _VF, functional as functional  # usort: skip\n  File \"/torch_cpu_env/lib/python3.10/site-packages/torch/functional.py\", line 8, in <module>\n    import torch.nn.functional as F\n  File \"/torch_cpu_env/lib/python3.10/site-packages/torch/nn/__init__.py\", line 9, in <module>\n    from torch.nn import (\n  File \"/torch_cpu_env/lib/python3.10/site-packages/torch/nn/attention/__init__.py\", line 8, in <module>\n    import torch.backends.cuda\n  File \"/torch_cpu_env/lib/python3.10/site-packages/torch/backends/__init__.py\", line 60, in <module> \n    from torch.backends import (\n  File \"/torch_cpu_env/lib/python3.10/site-packages/torch/backends/cuda/__init__.py\", line 221, in <module>\n    \"default\": torch._C._BlasBackend.Default,\nAttributeError: type object 'torch._C._BlasBackend' has no attribute 'Default'\n```\n\nOn the other hand, torch 2.6.0 seems to be fine\n```\n(torch_cpu_env) /tmp$ pip install -qqq torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu\n(torch_cpu_env) /tmp$ pip show torch\nName: torch\nVersion: 2.6.0+cpu\nSummary: Tensors and Dynamic neural networks in Python with strong GPU acceleration\nHome-page: https://pytorch.org/\nAuthor: PyTorch Team\nAuthor-email: packages@pytorch.org\nLicense: BSD-3-Clause\nLocation: /torch_cpu_env/lib/python3.10/site-packages\nRequires: filelock, fsspec, jinja2, networkx, sympy, typing-extensions\nRequired-by:\n(torch_cpu_env) /tmp$ python -c \"import torch\"\n(torch_cpu_env) /tmp$\n```\n\n### Versions\n\n```\nCollecting environment information...\nPyTorch version: N/A\nIs debug build: N/A\nCUDA used to build PyTorch: N/A\nROCM used to build PyTorch: N/A\n\nOS: Ubuntu 22.04.5 LTS (x86_64)\nGCC version: (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0\nClang version: Could not collect\nCMake version: version 3.30.4\nLibc version: glibc-2.35\n\nPython version: 3.10.12 (main, Feb  4 2025, 14:57:36) [GCC 11.4.0] (64-bit runtime)\nPython platform: Linux-5.10.235-227.919.amzn2.x86_64-x86_64-with-glibc2.35\nIs CUDA available: N/A\nCUDA runtime version: 12.6.77\nCUDA_MODULE_LOADING set to: N/A\nGPU models and configuration:\nGPU 0: NVIDIA H200\nGPU 1: NVIDIA H200\nGPU 2: NVIDIA H200\nGPU 3: NVIDIA H200\nGPU 4: NVIDIA H200\nGPU 5: NVIDIA H200\nGPU 6: NVIDIA H200\nG\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:10:06.950814+00:00"
+        "ts": "2025-08-11T00:56:17.601695+00:00"
       }
     },
     {
@@ -2230,7 +2499,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:06.950927+00:00",
+        "ts": "2025-08-11T00:56:17.601799+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2242,7 +2511,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:08.556065+00:00",
+        "ts": "2025-08-11T00:56:19.202371+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2254,7 +2523,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:10.960150+00:00",
+        "ts": "2025-08-11T00:56:21.607527+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -2278,7 +2547,7 @@
       "props": {
         "role": "system",
         "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:10:16.968387+00:00"
+        "ts": "2025-08-11T00:56:27.612752+00:00"
       }
     },
     {
@@ -2288,7 +2557,7 @@
       "props": {
         "role": "user",
         "content": "(Context: https://github.com/pytorch/pytorch/issues/160261)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:16.968454+00:00"
+        "ts": "2025-08-11T00:56:27.612783+00:00"
       }
     },
     {
@@ -2298,7 +2567,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:16.968607+00:00",
+        "ts": "2025-08-11T00:56:27.612848+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2310,7 +2579,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:18.573867+00:00",
+        "ts": "2025-08-11T00:56:29.215574+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2322,7 +2591,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:20.978964+00:00",
+        "ts": "2025-08-11T00:56:31.618582+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -2334,7 +2603,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:10:20.979031+00:00"
+        "ts": "2025-08-11T00:56:31.618669+00:00"
       }
     },
     {
@@ -2344,7 +2613,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:20.979134+00:00",
+        "ts": "2025-08-11T00:56:31.618813+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2356,7 +2625,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:22.580343+00:00",
+        "ts": "2025-08-11T00:56:33.223074+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2368,7 +2637,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:24.984199+00:00",
+        "ts": "2025-08-11T00:56:35.628201+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -2380,7 +2649,7 @@
       "props": {
         "role": "user",
         "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:10:24.984239+00:00"
+        "ts": "2025-08-11T00:56:35.628288+00:00"
       }
     },
     {
@@ -2390,7 +2659,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:24.984283+00:00",
+        "ts": "2025-08-11T00:56:35.628545+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2402,7 +2671,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:26.586357+00:00",
+        "ts": "2025-08-11T00:56:37.231970+00:00",
         "mode": "text",
         "tag": "text-generation"
       }
@@ -2414,7 +2683,7 @@
       "props": {
         "role": "assistant",
         "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:28.991014+00:00",
+        "ts": "2025-08-11T00:56:39.636864+00:00",
         "mode": "failed",
         "tag": "text-generation"
       }
@@ -2438,272 +2707,273 @@
         "family": "Qwen2",
         "size": "0.5B"
       }
-    },
-    {
-      "id": "issue::pytorch/pytorch#160248",
-      "label": "pytorch/pytorch#160248",
-      "type": "Issue",
-      "props": {
-        "title": "PyTorch 2.8: cuda linking issue, undefined symbol",
-        "url": "https://github.com/pytorch/pytorch/issues/160248",
-        "state": "open",
-        "type": "other",
-        "created_at": "2025-08-09T12:20:39Z",
-        "updated_at": "2025-08-10T02:45:22Z",
-        "labels": [
-          "module: build"
-        ]
-      }
-    },
-    {
-      "id": "conv::qwen2-0.5b::pytorch/pytorch#160248",
-      "label": "Conversation qwen2-0.5b #160248",
-      "type": "Conversation",
-      "props": {
-        "model": "qwen2-0.5b",
-        "family": "Qwen2",
-        "size": "0.5B",
-        "kind": "diagnostic"
-      }
-    },
-    {
-      "id": "conv::qwen2-0.5b::pytorch/pytorch#160248::t00",
-      "label": "system t0",
-      "type": "Turn",
-      "props": {
-        "role": "system",
-        "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:10:31.530492+00:00"
-      }
-    },
-    {
-      "id": "conv::qwen2-0.5b::pytorch/pytorch#160248::t01",
-      "label": "user t1",
-      "type": "Turn",
-      "props": {
-        "role": "user",
-        "content": "Issue: https://github.com/pytorch/pytorch/issues/160248\nTitle: PyTorch 2.8: cuda linking issue, undefined symbol\n\nBody (truncated):\n### 🐛 Describe the bug\n\nI'm able to build PyTorch 2.8.0 with CUDA support, but unable to import torch due to the following error:\n```\n  ImportError: .../lib/python3.11/site-packages/torch/lib/libtorch_cuda.so: undefined symbol: _ZN4gloo24CudaAllreduceRingChunkedIN3c104HalfENS_19CudaDeviceWorkspaceIS2_EEEC1ERKSt10shared_ptrINS_7ContextEERKSt6vectorIPS2_SaISC_EEiRKSB_IP11CUstream_stSaISI_EE\n```\nThe PyTorch build logs don't contain too many obvious issues, but I did notice:\n```\n  [3863/7188] Linking CXX shared library lib/libtorch_cuda.so\n  Warning: Unused direct dependencies:\n        .../linux-x86_64_v3/cuda-12.9.0-4sho23gvpq52q5qzjdn6ihul676rbesz/lib64/libcurand.so.10\n  [3864/7188] Linking CXX shared library lib/libtorch.so\n  Warning: Unused direct dependencies:\n        /tmp/root/spack-stage/spack-stage-py-torch-2.8.0-am4hue2ya4xr3erxu3m4hr5vg5sjj7ky/spack-src/build/lib/libtorch_cpu.so\n        /tmp/root/spack-stage/spack-stage-py-torch-2.8.0-am4hue2ya4xr3erxu3m4hr5vg5sjj7ky/spack-src/build/lib/libtorch_cuda.so\n```\nFull build logs:\n\n* [spack-build-out.txt.gz](https://github.com/user-attachments/files/21697991/spack-build-out.txt.gz)\n* [spack-build-env.txt.gz](https://github.com/user-attachments/files/21697993/spack-build-env.txt.gz)\n\n### Versions\n\nPyTorch version: 2.8.0\nIs debug build: False\nCUDA used to build PyTorch: True\nROCM used to build PyTorch: N/A\n\nOS: Ubuntu 24.04 (x86_64, aarch64)\nGCC version: 13.2.0\nClang version: N/A\nCMake version: version 3.31.8\nLibc version: N/A\n\nPython version: 3.11.11\nIs CUDA available: True\nCUDA runtime version: 12.9.0\nCUDA_MODULE_LOADING set to: N/A\nGPU models and configuration: 8.0\nNvidia driver version: 12.9.41\ncuDNN version: 8.9.7.29\nIs XPU available: False\nHIP runtime version: N/A\nMIOpen runtime version: N/A\nIs XNNPACK available: True\n\ncc @malfet @seemethere @kulinseth @albanD @DenisVieriu97 @jhavukainen\n\nTASK:\nProvide concise next steps, likely category, and relevant references.\nKeep it concise and actionable.\n",
-        "ts": "2025-08-11T00:10:31.530546+00:00"
-      }
-    },
-    {
-      "id": "conv::qwen2-0.5b::pytorch/pytorch#160248::t02",
-      "label": "assistant t2",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:31.530674+00:00",
-        "mode": "text",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "conv::qwen2-0.5b::pytorch/pytorch#160248::t03",
-      "label": "assistant t3",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:33.133943+00:00",
-        "mode": "text",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "conv::qwen2-0.5b::pytorch/pytorch#160248::t04",
-      "label": "assistant t4",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:35.534636+00:00",
-        "mode": "failed",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "label": "QnA qwen2-0.5b q1",
-      "type": "Conversation",
-      "props": {
-        "model": "qwen2-0.5b",
-        "family": "Qwen2",
-        "size": "0.5B",
-        "kind": "qna",
-        "q_index": 1
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t00",
-      "label": "system t0",
-      "type": "Turn",
-      "props": {
-        "role": "system",
-        "content": "You are a concise, accurate PyTorch triage assistant.",
-        "ts": "2025-08-11T00:10:41.549179+00:00"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t01",
-      "label": "user t1",
-      "type": "Turn",
-      "props": {
-        "role": "user",
-        "content": "(Context: https://github.com/pytorch/pytorch/issues/160248)\n[GEN ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:41.549198+00:00"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t02",
-      "label": "assistant t2",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:41.549230+00:00",
-        "mode": "text",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t03",
-      "label": "assistant t3",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:43.154476+00:00",
-        "mode": "text",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t04",
-      "label": "assistant t4",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:45.558991+00:00",
-        "mode": "failed",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t05",
-      "label": "user t5",
-      "type": "Turn",
-      "props": {
-        "role": "user",
-        "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:10:45.559095+00:00"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t06",
-      "label": "assistant t6",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:45.559282+00:00",
-        "mode": "text",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t07",
-      "label": "assistant t7",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:47.160027+00:00",
-        "mode": "text",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t08",
-      "label": "assistant t8",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:49.565044+00:00",
-        "mode": "failed",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t09",
-      "label": "user t9",
-      "type": "Turn",
-      "props": {
-        "role": "user",
-        "content": "Refine answer in 3-6 bullet points with code or links if helpful.",
-        "ts": "2025-08-11T00:10:49.565133+00:00"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t10",
-      "label": "assistant t10",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:49.565361+00:00",
-        "mode": "text",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t11",
-      "label": "assistant t11",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] StopIteration: ",
-        "ts": "2025-08-11T00:10:51.167268+00:00",
-        "mode": "text",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t12",
-      "label": "assistant t12",
-      "type": "Turn",
-      "props": {
-        "role": "assistant",
-        "content": "[MODEL ERROR] empty/aborted response after retries",
-        "ts": "2025-08-11T00:10:53.568997+00:00",
-        "mode": "failed",
-        "tag": "text-generation"
-      }
-    },
-    {
-      "id": "qa::qwen2-0.5b::pytorch/pytorch#160248::q01::Q",
-      "label": "Q1",
-      "type": "Question",
-      "props": {
-        "text": "[GEN ERROR] empty/aborted response after retries",
-        "gen_model": "bigcode/starcoder2-3b"
-      }
-    },
-    {
-      "id": "qa::qwen2-0.5b::pytorch/pytorch#160248::q01::A",
-      "label": "A1 (qwen2-0.5b)",
-      "type": "Answer",
-      "props": {
-        "text": "[MODEL ERROR] empty/aborted response after retries",
-        "model": "qwen2-0.5b",
-        "family": "Qwen2",
-        "size": "0.5B"
-      }
     }
   ],
   "edges": [
+    {
+      "from": "solution::pytorch/pytorch#160289",
+      "to": "issue::pytorch/pytorch#160289",
+      "type": "solves",
+      "props": {}
+    },
+    {
+      "from": "model::Qwen2::0.5B",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289",
+      "type": "produced",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289",
+      "to": "issue::pytorch/pytorch#160289",
+      "type": "about",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t00",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t01",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289::t00",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t01",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t02",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289::t01",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t02",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t03",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289::t02",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t03",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t04",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "conv::qwen2-0.5b::pytorch/pytorch#160289::t03",
+      "to": "conv::qwen2-0.5b::pytorch/pytorch#160289::t04",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "model::Qwen2::0.5B",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "type": "produced",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "issue::pytorch/pytorch#160289",
+      "type": "about",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t00",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t01",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t00",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t01",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t02",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t02",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t03",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t02",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t03",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t04",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t03",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t04",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t05",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t04",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t05",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t06",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t05",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t06",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t07",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t06",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t07",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t08",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t07",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t08",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t09",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t08",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t09",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t10",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t09",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t10",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t11",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t10",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t11",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t12",
+      "type": "has_turn",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t11",
+      "to": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01::t12",
+      "type": "next",
+      "props": {}
+    },
+    {
+      "from": "qa::qwen2-0.5b::pytorch/pytorch#160289::q01::Q",
+      "to": "qa::qwen2-0.5b::pytorch/pytorch#160289::q01::A",
+      "type": "answered_by",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qa::qwen2-0.5b::pytorch/pytorch#160289::q01::Q",
+      "type": "has_q",
+      "props": {}
+    },
+    {
+      "from": "qna::qwen2-0.5b::pytorch/pytorch#160289::q01",
+      "to": "qa::qwen2-0.5b::pytorch/pytorch#160289::q01::A",
+      "type": "has_a",
+      "props": {}
+    },
+    {
+      "from": "qa::qwen2-0.5b::pytorch/pytorch#160289::q01::Q",
+      "to": "issue::pytorch/pytorch#160289",
+      "type": "about",
+      "props": {}
+    },
+    {
+      "from": "qa::qwen2-0.5b::pytorch/pytorch#160289::q01::A",
+      "to": "issue::pytorch/pytorch#160289",
+      "type": "about",
+      "props": {}
+    },
     {
       "from": "model::Qwen2::0.5B",
       "to": "conv::qwen2-0.5b::pytorch/pytorch#160285",
@@ -5047,264 +5317,6 @@
     {
       "from": "qa::qwen2-0.5b::pytorch/pytorch#160261::q01::A",
       "to": "issue::pytorch/pytorch#160261",
-      "type": "about",
-      "props": {}
-    },
-    {
-      "from": "model::Qwen2::0.5B",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248",
-      "type": "produced",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248",
-      "to": "issue::pytorch/pytorch#160248",
-      "type": "about",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t00",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t01",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248::t00",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t01",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t02",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248::t01",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t02",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t03",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248::t02",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t03",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t04",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "conv::qwen2-0.5b::pytorch/pytorch#160248::t03",
-      "to": "conv::qwen2-0.5b::pytorch/pytorch#160248::t04",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "model::Qwen2::0.5B",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "type": "produced",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "issue::pytorch/pytorch#160248",
-      "type": "about",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t00",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t01",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t00",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t01",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t02",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t02",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t03",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t02",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t03",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t04",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t03",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t04",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t05",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t04",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t05",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t06",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t05",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t06",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t07",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t06",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t07",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t08",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t07",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t08",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t09",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t08",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t09",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t10",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t09",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t10",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t11",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t10",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t11",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t12",
-      "type": "has_turn",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t11",
-      "to": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01::t12",
-      "type": "next",
-      "props": {}
-    },
-    {
-      "from": "qa::qwen2-0.5b::pytorch/pytorch#160248::q01::Q",
-      "to": "qa::qwen2-0.5b::pytorch/pytorch#160248::q01::A",
-      "type": "answered_by",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qa::qwen2-0.5b::pytorch/pytorch#160248::q01::Q",
-      "type": "has_q",
-      "props": {}
-    },
-    {
-      "from": "qna::qwen2-0.5b::pytorch/pytorch#160248::q01",
-      "to": "qa::qwen2-0.5b::pytorch/pytorch#160248::q01::A",
-      "type": "has_a",
-      "props": {}
-    },
-    {
-      "from": "qa::qwen2-0.5b::pytorch/pytorch#160248::q01::Q",
-      "to": "issue::pytorch/pytorch#160248",
-      "type": "about",
-      "props": {}
-    },
-    {
-      "from": "qa::qwen2-0.5b::pytorch/pytorch#160248::q01::A",
-      "to": "issue::pytorch/pytorch#160248",
       "type": "about",
       "props": {}
     }

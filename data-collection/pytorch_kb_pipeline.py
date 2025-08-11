@@ -568,6 +568,24 @@ def add_node(nodes: Dict[str, dict], node_id: str, label: str, ntype: str, props
 def add_edge(edges: List[dict], src: str, dst: str, etype: str, props: Optional[dict] = None):
     edges.append({"from": src, "to": dst, "type": etype, "props": props or {}})
 
+# ---------- NEW: Simple stdout conversation printer ----------
+def print_conversation_to_stdout(issue_number: int, model_nick: str, kind: str, trace: ChatTrace):
+    """
+    Minimal pretty-printer for a conversation trace. Prints in the order the turns were added.
+    kind: "diagnostic" or f"qna q{index:02d}"
+    """
+    sep = "=" * 88
+    print(sep)
+    header = f"Issue #{issue_number} — Model: {model_nick} — {kind}"
+    print(header)
+    print("-" * len(header))
+    for turn in trace.messages:
+        role = (turn.role or "unknown").capitalize()
+        text = (turn.content or "").strip()
+        print(f"{role}: {text}")
+    print(sep)
+    print()  # blank line for readability
+
 # ---------- Main ----------
 def main():
     global SESSION, GH_TIMEOUT
@@ -729,6 +747,9 @@ def main():
                 trace.add("user", "Refine your answer. Keep it shorter and more actionable.")
                 _ = call_hf_chat(repo_id, trace)
 
+            # >>> NEW: print diagnostic conversation to stdout
+            print_conversation_to_stdout(number, nick, "diagnostic", trace)
+
             # Knowledge graph: Conversation + Turn nodes (diagnostic)
             conv_id = f"conv::{nick}::{args.repo}#{number}"
             add_node(nodes, conv_id, f"Conversation {nick} #{number}", "Conversation", {
@@ -783,6 +804,9 @@ def main():
                 for _turn in range(max(0, args.qna_turns - 1)):
                     trace.add("user", "Refine answer in 3-6 bullet points with code or links if helpful.")
                     answer_text = call_hf_chat(repo_id, trace)
+
+                # >>> NEW: print QnA conversation to stdout
+                print_conversation_to_stdout(number, nick, f"qna q{q_index:02d}", trace)
 
                 # Conversation + Turns for QnA
                 add_node(nodes, conv_id, f"QnA {nick} q{q_index}", "Conversation", {
