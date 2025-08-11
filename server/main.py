@@ -316,6 +316,16 @@ async def ask(request: AskRequest):
         
         seed_count, leech_count = result
         
+        # Check if user has sufficient seed:leech ratio (2:1 minimum)
+        # User must have at least 2 seeds for every leech (including the one they're about to add)
+        required_seeds = 2 * (leech_count + 1)  # +1 because we're about to increment leech
+        if seed_count < required_seeds:
+            conn.close()
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Insufficient seed:leech ratio. You have {seed_count} seeds and {leech_count} leeches. You need at least {required_seeds} seeds to ask questions (2:1 ratio required)."
+            )
+        
         # Increment leech count (user is consuming knowledge)
         new_leech_count = leech_count + 1
         cursor.execute("UPDATE registrations SET leech_count = ? WHERE uuid = ?", (new_leech_count, request.uuid))
