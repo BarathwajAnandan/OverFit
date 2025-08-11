@@ -5,6 +5,7 @@ import uuid
 import uvicorn
 import sqlite3
 from datetime import datetime
+import kuzu
 
 app = FastAPI(title="Agent Marketplace API")
 
@@ -56,6 +57,9 @@ class ContributeRequest(BaseModel):
     answer_summary: str
     conversation_history: str
 
+class KuzuRequest(BaseModel):
+    query: str
+
 # Response Models
 class RegisterResponse(BaseModel):
     uuid: str
@@ -75,6 +79,11 @@ class AskResponse(BaseModel):
 class ContributeResponse(BaseModel):
     seed: int
     leech: int
+
+class KuzuResponse(BaseModel):
+    result: str
+    success: bool
+    error: Optional[str] = None
 
 # Endpoints
 @app.post("/register", response_model=RegisterResponse)
@@ -195,6 +204,38 @@ async def contribute(request: ContributeRequest):
     except Exception as e:
         conn.close()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.post("/kuzu", response_model=KuzuResponse)
+async def execute_kuzu_query(request: KuzuRequest):
+    try:
+        # Connect to the Kuzu database
+        db = kuzu.Database("/Users/aghatage/Documents/code/OverFit/overfit-db")
+        conn = kuzu.Connection(db)
+        
+        # Execute the query
+        result = conn.execute(request.query)
+        
+        # Convert the result to a string format
+        result_str = ""
+        while result.has_next():
+            row = result.get_next()
+            result_str += str(row) + "\n"
+        
+        # Close the connection
+        conn.close()
+        
+        return KuzuResponse(
+            result=result_str.strip() if result_str else "No results found",
+            success=True,
+            error=None
+        )
+    
+    except Exception as e:
+        return KuzuResponse(
+            result="",
+            success=False,
+            error=str(e)
+        )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=3003)
